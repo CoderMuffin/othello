@@ -10,6 +10,7 @@ project(othello)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include_directories(lib)
 add_library(othello src/board.cpp src/nn.cpp)
 
 add_executable(main src/main.cpp)

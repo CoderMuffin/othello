@@ -5,9 +5,10 @@
 
 constexpr auto BLACK = 0;
 constexpr auto WHITE = 1;
+constexpr uint64_t MASK_ALL = ~0ULL;
 #define OFFSET(b) (1ULL << (b))
 #define XY(x, y) ((x) + (y)*8)
-#define BIT(n, b) ((n) & OFFSET(b))
+#define BIT(n, b) (((n) & OFFSET(b)) != 0)
 
 class Board {
 public:
@@ -29,7 +30,7 @@ public:
 	/**
 	 * @brief place a piece on the board if the move is valid.
 	 */
-	void move_if_valid(uint8_t x, uint8_t y, bool color);
+	bool move_if_valid(uint8_t x, uint8_t y, bool color);
 
 	/**
 	 * @brief load a board state from a string of dots
