@@ -103,8 +103,75 @@ TEST(flip_x) {
 		"        "
 		"        ");
 
-	board.move(4, 2, BLACK);
-	board.move(4, 2, BLACK);
+	board.from_dots(
+		"        "
+		"        "
+		"        "
+		"  @.@.  "
+		"        "
+		"        "
+		"        "
+		"        ");
+
+	board.move(1, 3, BLACK);
+	board.move(6, 3, WHITE);
+
+	ASSERT_BOARD(
+		"        "
+		"        "
+		"        "
+		" ...@@@ "
+		"        "
+		"        "
+		"        "
+		"        ");
+}
+
+TEST(flip_y) {
+	Board board;
+	Board temp_board;
+
+	board.move(5, 4, WHITE);
+	board.move(6, 4, WHITE);
+
+	ASSERT_BOARD(
+		"        "
+		"        "
+		"        "
+		"   @.   "
+		"   .@@@ "
+		"        "
+		"        "
+		"        ");
+	ASSERT_EQ(board, temp_board);
+
+	board.move(7, 4, BLACK);
+
+	ASSERT_BOARD(
+		"        "
+		"        "
+		"        "
+		"   @.   "
+		"   ....."
+		"        "
+		"        "
+		"        ");
+
+	board.reset();
+	board.move(1, 3, WHITE);
+	board.move(2, 3, WHITE);
+
+	ASSERT_BOARD(
+		"        "
+		"        "
+		"        "
+		" @@@.   "
+		"   .@   "
+		"        "
+		"        "
+		"        ");
+
+	board.move(0, 3, BLACK);
 
 	ASSERT_BOARD(
 		"        "
@@ -116,6 +183,26 @@ TEST(flip_x) {
 		"        "
 		"        ");
 
-	board.reset();
-}
+	board.from_dots(
+		"        "
+		"        "
+		"        "
+		"  @.@.  "
+		"        "
+		"        "
+		"        "
+		"        ");
 
+	board.move(1, 3, BLACK);
+	board.move(6, 3, WHITE);
+
+	ASSERT_BOARD(
+		"        "
+		"        "
+		"        "
+		" ...@@@ "
+		"        "
+		"        "
+		"        "
+		"        ");
+}
