@@ -1,20 +1,21 @@
-#include "muffintest.cpp"
 #include "board.hpp"
+#include "util.hpp"
 
-std::string board_state(Board &b) {
-	char out[65]{};
-	for (int i = 0; i < 64; i++) {
-		out[i] = (b.occupied & OFFSET(i)) ?
-			(b.color & OFFSET(i)) ? '@' : '.'
-			: ' ';
-	}
-	out[64] = 0;
-	return std::string(out);
-}
+#define MUFFINTEST_STARTUP bootstrap_win32_unicode();
+
+#include "muffintest.cpp"
 
 #define ASSERT_BOARD(state) {     \
 	temp_board.from_dots(state);  \
 	ASSERT_EQ(board, temp_board); \
+}
+
+#define ASSERT_BITBOARD(bits, dots) {  \
+	temp_board.occupied = bits;  \
+	temp_board.color = 0;         \
+	temp_board_2.from_dots(dots);  \
+	temp_board_2.color = 0;         \
+	ASSERT_EQ(temp_board, temp_board_2); \
 }
 
 TEST(assert_board_from_dots) {
@@ -429,4 +430,29 @@ TEST(board_flip_all) {
 		"  @ @ @ "
 		" @  @  @"
 		"@   @   ");
+}
+
+TEST(move_gen) {
+	Board board;
+	Board temp_board;
+	Board temp_board_2;
+
+	board.from_dots(
+		"        "
+		"        "
+		"  ...   "
+		"  .@.   "
+		"  ...   "
+		"        "
+		"        "
+		"        ");
+	ASSERT_BITBOARD(board.valid_moves(WHITE),
+		"        "
+		" @ @ @  "
+		"        "
+		" @   @  "
+		"        "
+		" @ @ @  "
+		"        "
+		"        ");
 }

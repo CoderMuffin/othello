@@ -7,6 +7,13 @@
 #include <vector>
 #include <string>
 
+#ifndef MUFFINTEST_STARTUP
+	#define MUFFINTEST_STARTUP
+#endif
+#ifndef MUTTINTEST_TEARDOWN
+	#define MUFFINTEST_TEARDOWN
+#endif
+
 namespace MuffinTest {
 	struct Test {
 		std::string name;
@@ -91,5 +98,7 @@ FAIL(s.str());                                                                 \
 } }
 
 int main() {
+	MUFFINTEST_STARTUP
 	MuffinTest::run_all();
+	MUFFINTEST_TEARDOWN
 }

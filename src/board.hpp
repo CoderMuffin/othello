@@ -30,7 +30,7 @@ public:
 	/**
 	 * @brief place a piece on the board if the move is valid.
 	 */
-	bool move_if_valid(uint8_t x, uint8_t y, bool color);
+	uint64_t valid_moves(bool color);
 
 	/**
 	 * @brief load a board state from a string of dots
