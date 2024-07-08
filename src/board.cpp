@@ -49,140 +49,39 @@ int Board::number_of_set_bits(uint32_t i) {
     return i >> 24;               // return just that top byte (after truncating to 32-bit even when int is wider than uint32_t)
 }
 
+// e, s, se, sw, w, n, nw, ne
+static uint64_t direction_edge[] = { 0x7F7F7F7F7F7F7F7FU, 0x00FFFFFFFFFFFFFFU, 0x007F7F7F7F7F7F7FU, 0x00FEFEFEFEFEFEFEU, 0xFEFEFEFEFEFEFEFEU, 0xFFFFFFFFFFFFFF00U, 0xFEFEFEFEFEFEFE00U, 0x7F7F7F7F7F7F7F00U };
+static int direction_shift[] = { 1, 8, 9, 7 }; // can't bitshift by negative apparently
+
 bool Board::move(uint8_t new_x, uint8_t new_y, bool new_color) {
-    this->occupied |= OFFSET(XY(new_x, new_y));
+    const int position = OFFSET(XY(new_x, new_y));
+
+    this->occupied |= position;
     if (new_color) {
-        this->color |= OFFSET(XY(new_x, new_y));
+        this->color |= position;
     } else {
-        this->color &= ~OFFSET(XY(new_x, new_y));
+        this->color &= ~position;
     }
 
-    int x, y, i;
-    uint64_t partial_flip = 0;
-    uint64_t commit_flip = 0;
+    uint64_t mine = occupied & (new_color ? color : ~color);
+    uint64_t theirs = occupied & (new_color ? ~color : color);
 
-    // east/west (-)
-    for (x = new_x + 1; x < 8; x++) {
-        i = XY(x, new_y);
+    uint64_t acreage = (mask & direction_edge[i]) << direction_shift[i];
+    uint64_t temp_flippers = 0;
 
-        if (!BIT(this->occupied, i)) {
-            break;
-        } else if (BIT(this->color, i) == new_color) {
-            commit_flip |= partial_flip;
-            break;
-        } else {
-            partial_flip |= OFFSET(i);
-        }
+    while ((acreage & theirs) > 0) {
+        temp_flippers |= acreage & mine;
+        acreage = (acreage & direction_edge[i]) << direction_shift[i];
     }
-    partial_flip = 0;
-    for (x = new_x - 1; x >= 0; x--) {
-        i = XY(x, new_y);
-
-        if (!BIT(this->occupied, i)) {
-            break;
-        } else if (BIT(this->color, i) == new_color) {
-            commit_flip |= partial_flip;
-            break;
-        } else {
-            partial_flip |= OFFSET(i);
-        }
+    if ((acreage & mine) > 0) {
+        flippers |= temp_flippers;
     }
 
-    // north/south (|)
-    partial_flip = 0;
-    for (y = new_y + 1; y < 8; y++) {
-        i = XY(new_x, y);
-
-        if (!BIT(this->occupied, i)) {
-            break;
-        } else if (BIT(this->color, i) == new_color) {
-            commit_flip |= partial_flip;
-            break;
-        } else {
-            partial_flip |= OFFSET(i);
-        }
-    }
-    partial_flip = 0;
-    for (y = new_y - 1; y >= 0; y--) {
-        i = XY(new_x, y);
-
-        if (!BIT(this->occupied, i)) {
-            break;
-        } else if (BIT(this->color, i) == new_color) {
-            commit_flip |= partial_flip;
-            break;
-        } else {
-            partial_flip |= OFFSET(i);
-        }
-    }
-
-    // ne/sw (/)
-    partial_flip = 0;
-    for (x = new_x - 1, y = new_y + 1; x >= 0 && y < 8; x--, y++) {
-        i = XY(x, y);
-
-        if (!BIT(this->occupied, i)) {
-            break;
-        } else if (BIT(this->color, i) == new_color) {
-            commit_flip |= partial_flip;
-            break;
-        } else {
-            partial_flip |= OFFSET(i);
-        }
-    }
-    partial_flip = 0;
-    for (x = new_x + 1, y = new_y - 1; x < 8 && y >= 0; x++, y--) {
-        i = XY(x, y);
-
-        if (!BIT(this->occupied, i)) {
-            break;
-        } else if (BIT(this->color, i) == new_color) {
-            commit_flip |= partial_flip;
-            break;
-        } else {
-            partial_flip |= OFFSET(i);
-        }
-    }
-
-    // nw/se (\)
-    partial_flip = 0;
-    for (x = new_x + 1, y = new_y + 1; x < 8 && y < 8; x++, y++) {
-        i = XY(x, y);
-
-        if (!BIT(this->occupied, i)) {
-            break;
-        } else if (BIT(this->color, i) == new_color) {
-            commit_flip |= partial_flip;
-            break;
-        } else {
-            partial_flip |= OFFSET(i);
-        }
-    }
-    partial_flip = 0;
-    for (x = new_x - 1, y = new_y - 1; x >= 0 && y >= 0; x--, y--) {
-        i = XY(x, y);
-
-        if (!BIT(this->occupied, i)) {
-            break;
-        } else if (BIT(this->color, i) == new_color) {
-            commit_flip |= partial_flip;
-            break;
-        } else {
-            partial_flip |= OFFSET(i);
-        }
-    }
-
-    this->color ^= commit_flip;
-
-    return commit_flip != 0;
 }
 
-uint64_t Board::valid_moves(bool new_color) {
+uint64_t Board::valid_moves(bool new_color) const {
     uint64_t moves = 0;
 
-    // e, s, se, sw, w, n, nw, ne
-    uint64_t direction_edge[] = { 0x7F7F7F7F7F7F7F7FU, 0x00FFFFFFFFFFFFFFU, 0x007F7F7F7F7F7F7FU, 0x00FEFEFEFEFEFEFEU, 0xFEFEFEFEFEFEFEFEU, 0xFFFFFFFFFFFFFF00U, 0xFEFEFEFEFEFEFE00U, 0x7F7F7F7F7F7F7F00U };
-    int direction_shift[] = { 1, 8, 9, 7 }; // can't bitshift by negative apparently
     uint64_t mine = occupied & (new_color ? color : ~color);
     uint64_t theirs = occupied & (new_color ? ~color : color);
 
