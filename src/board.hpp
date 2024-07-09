@@ -25,7 +25,7 @@ public:
 	 * @param y - the row to place the piece
 	 * @param color - the color of the piece to be placed
 	 */
-	bool move(uint8_t x, uint8_t y, bool color);
+	void move(uint8_t x, uint8_t y, bool color);
 
 	/**
 	 * @brief place a piece on the board if the move is valid.

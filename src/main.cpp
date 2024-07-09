@@ -1,6 +1,6 @@
 #include <iostream>
 #include <ostream>
-#include <Windows.h>
+#include <vector>
 #include "util.hpp"
 #include "nn.hpp"
 #include "board.hpp"
@@ -24,9 +24,9 @@ int main() {
     std::cout << b << std::endl;
     visualise_bitboard(b.valid_moves(WHITE));
 
-    NN nn(std::vector<int> { 4, 2, 3 }, 0.01);
-    Vector v(4);
-    v << 1, 2, 3, 4;
-    std::cout << nn.apply(v) << std::endl;
+    // NN nn(&std::vector<int> { 4, 2, 3 }, 0.01);
+    // Vector v(4);
+    // v << 1, 2, 3, 4;
+    // std::cout << nn.apply(v) << std::endl;
 }
 

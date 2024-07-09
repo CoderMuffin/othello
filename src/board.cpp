@@ -34,14 +34,9 @@ std::ostream& operator<<(std::ostream& os, const Board& board) {
     return os;
 }
 
-Board::GameState Board::state() const {
-    if (occupied != MASK_ALL) {
-        return Playing;
-    }
-}
-
 // https://stackoverflow.com/questions/109023/count-the-number-of-set-bits-in-a-32-bit-integer HE HE HE HA
 int Board::number_of_set_bits(uint32_t i) {
+    // see also popcnt
     i = i - ((i >> 1) & 0x55555555);        // add pairs of bits
     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);  // quads
     i = (i + (i >> 4)) & 0x0F0F0F0F;        // groups of 8
@@ -50,11 +45,11 @@ int Board::number_of_set_bits(uint32_t i) {
 }
 
 // e, s, se, sw, w, n, nw, ne
-static uint64_t direction_edge[] = { 0x7F7F7F7F7F7F7F7FU, 0x00FFFFFFFFFFFFFFU, 0x007F7F7F7F7F7F7FU, 0x00FEFEFEFEFEFEFEU, 0xFEFEFEFEFEFEFEFEU, 0xFFFFFFFFFFFFFF00U, 0xFEFEFEFEFEFEFE00U, 0x7F7F7F7F7F7F7F00U };
-static int direction_shift[] = { 1, 8, 9, 7 }; // can't bitshift by negative apparently
+const static uint64_t direction_edge[] = { 0x7F7F7F7F7F7F7F7FU, 0x00FFFFFFFFFFFFFFU, 0x007F7F7F7F7F7F7FU, 0x00FEFEFEFEFEFEFEU, 0xFEFEFEFEFEFEFEFEU, 0xFFFFFFFFFFFFFF00U, 0xFEFEFEFEFEFEFE00U, 0x7F7F7F7F7F7F7F00U };
+const static int direction_shift[] = { 1, 8, 9, 7 }; // can't bitshift by negative apparently
 
-bool Board::move(uint8_t new_x, uint8_t new_y, bool new_color) {
-    const int position = OFFSET(XY(new_x, new_y));
+void Board::move(uint8_t new_x, uint8_t new_y, bool new_color) {
+    const uint64_t position = OFFSET(XY(new_x, new_y));
 
     this->occupied |= position;
     if (new_color) {
@@ -66,17 +61,35 @@ bool Board::move(uint8_t new_x, uint8_t new_y, bool new_color) {
     uint64_t mine = occupied & (new_color ? color : ~color);
     uint64_t theirs = occupied & (new_color ? ~color : color);
 
-    uint64_t acreage = (mask & direction_edge[i]) << direction_shift[i];
-    uint64_t temp_flippers = 0;
+    uint64_t to_flip = 0;
+    for (int i = 0; i < 4; i++) {
+        uint64_t adjacent = (position & direction_edge[i]) << direction_shift[i];
+        uint64_t potential_flip = 0;
 
-    while ((acreage & theirs) > 0) {
-        temp_flippers |= acreage & mine;
-        acreage = (acreage & direction_edge[i]) << direction_shift[i];
-    }
-    if ((acreage & mine) > 0) {
-        flippers |= temp_flippers;
+        // TODO: optimisable?
+        // hmmst how to
+        // shift all, and with itself, and with edge, should highlight all ones on the end. take the one on the current row/col/whatever
+        while ((adjacent & theirs) != 0) { // while neighboring 
+            potential_flip |= adjacent & theirs;
+            adjacent = (adjacent & direction_edge[i]) << direction_shift[i];
+        }
+        if ((adjacent & mine) != 0) {
+            to_flip |= potential_flip;
+        }
+
+        adjacent = (position & direction_edge[i + 4]) >> direction_shift[i];
+        potential_flip = 0;
+
+        while ((adjacent & theirs) != 0) {
+            potential_flip |= adjacent & theirs;
+            adjacent = (adjacent & direction_edge[i + 4]) >> direction_shift[i];
+        }
+        if ((adjacent & mine) != 0) {
+            to_flip |= potential_flip;
+        }
     }
 
+    color ^= to_flip;
 }
 
 uint64_t Board::valid_moves(bool new_color) const {
