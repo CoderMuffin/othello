@@ -7,7 +7,7 @@ typedef Eigen::MatrixXf Matrix;
 typedef Eigen::VectorXf Vector;
 class NN {
 public:
-    NN(std::initializer_list<int> &layer_shapes, float learning_rate) : learning_rate(learning_rate) {
+    NN(std::initializer_list<int> layer_shapes, float learning_rate) : learning_rate(learning_rate) {
         initialize_layers_random(layer_shapes);
     }
     Vector apply(Vector&) const;
