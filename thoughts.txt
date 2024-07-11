@@ -1,0 +1,11 @@
+self play time
+    take 100
+    each of which play games until someone wins
+        nnbatch should shuffle them and then pick adjacent nns
+        nns should play repeatedly until two passes (valid_moves == 0) are made
+    next generation
+        all 50 winners are mutated and reinserted
+        25 winners are chosen and just reinserted without mutation
+        25 losers are chosen and put in in case the new generation is bad
+
+

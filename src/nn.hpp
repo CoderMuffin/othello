@@ -14,7 +14,7 @@ public:
     std::vector<Eigen::Index> shape() const;
 
 private:
-    void initialize_layers_random(std::initializer_list<int>&);
+    void initialize_layers_random(std::initializer_list<int>);
     std::vector<Matrix> layers;
     float learning_rate;
 };

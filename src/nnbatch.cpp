@@ -11,3 +11,6 @@ std::array<int, N> NNBatch<N>::rankings() {
     return scores;
 }
 
+bool play_game(NN& black, NN& white) {
+
+}

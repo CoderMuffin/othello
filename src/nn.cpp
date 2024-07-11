@@ -1,6 +1,4 @@
-#include <numeric>
 #include "nn.hpp"
-#include "board.hpp"
 
 Vector NN::apply(Vector& in) const {
     Vector out = in;
@@ -20,7 +18,7 @@ std::vector<Eigen::Index> NN::shape() const {
     return out;
 }
 
-void NN::initialize_layers_random(std::initializer_list<int> &shapes) {
+void NN::initialize_layers_random(std::initializer_list<int> shapes) {
     layers.clear();
     for (auto it = shapes.begin(); std::next(it) != shapes.end(); it++) {
         layers.push_back(Matrix::Random(*std::next(it), *it));
