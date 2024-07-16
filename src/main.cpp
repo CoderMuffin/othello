@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ostream>
 #include <vector>
+#include "nnbatch.hpp"
 #include "util.hpp"
 #include "nn.hpp"
 #include "board.hpp"
@@ -24,6 +25,22 @@ int main() {
     std::cout << b << std::endl;
     visualise_bitboard(b.valid_moves(WHITE));
 
+    NNBatch batch{100, 50, 25};
+
+    for (int i = 0; i < 100; i++) {
+        std::cout << "generation " << i << std::endl;
+        batch.play_generation();
+    }
+
+    NN nn_black = batch.nns[0];
+
+    int wins = 0;
+    for (int i = 0; i < 10000; i++) {
+        b.reset();
+        NN nn_white({16, 16}, 0.01);
+        if (NNBatch::play_game(b, nn_black, nn_white) == Board::BlackWins) wins++;
+    }
+    std::cout << wins << std::endl;
     // NN nn(&std::vector<int> { 4, 2, 3 }, 0.01);
     // Vector v(4);
     // v << 1, 2, 3, 4;

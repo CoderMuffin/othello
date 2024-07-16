@@ -14,7 +14,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(lib)
 add_library(othello "src/board.cpp" "src/nn.cpp" "src/util.cpp" "src/nnbatch.cpp" )
 
+target_compile_options(othello PRIVATE -O3)
+
 add_executable(main "src/main.cpp")
+target_compile_options(main PRIVATE -O3)
+
 add_executable(test "src/test.cpp")
 
 target_link_libraries(main PRIVATE othello)

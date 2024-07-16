@@ -3,24 +3,31 @@
 #include "board.hpp"
 #include "nn.hpp"
 
-template <unsigned int N>
 class NNBatch {
 public:
-	NNBatch(unsigned int nncount) {
-		for (int i = 0; i < N; i++) {
-			nns[i] = NN({ 64, 64 }, 1.0f);
+	NNBatch(unsigned int nn_count, size_t p_mutate_count, size_t p_copy_count) : mutate_count(p_mutate_count), copy_count(p_copy_count) {
+		nns.reserve(nn_count);
+		boards.reserve(nn_count / 2);
+
+		for (int i = 0; i < nn_count; i++) {
+			nns.push_back(NN({ 64, 256, 256, 64 }, 1.0f));
+		}
+		for (int i = 0; i < nn_count/2; i++) {
+			boards.push_back(Board());
 		}
 	}
-
-	std::array<int, N> rankings();
 
 	/*
 	 * @brief plays the two neural networks against each other, returning the winner
 	 * @returns the winning color (BLACK or WHITE)
 	 */
-	bool play_game(NN &black, NN &white);
+	void mutate(NN& nn);
+	void play_generation();
+	static Board::WinState play_game(Board &board, NN &black, NN &white);
+	std::vector<NN> nns;
 private:
-	NN nns[N];
-	Board boards[N/2];
+	std::vector<Board> boards;
+	size_t copy_count; // number of winners to reinsert without mutation
+	size_t mutate_count; // number of winners to mutate and reinsert
 };
 

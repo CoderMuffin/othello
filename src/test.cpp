@@ -456,3 +456,74 @@ TEST(move_gen) {
 		"        "
 		"        ");
 }
+
+TEST(winner) {
+	Board board;
+
+	board.from_dots(
+		"        "
+		"        "
+		"  .@.   "
+		"  .@@   "
+		"  .@.   "
+		"        "
+		"        "
+		"        ");
+	ASSERT_EQ(board.win_state(), Board::BlackWins);
+
+	board.from_dots(
+		"        "
+		"        "
+		"  .@.   "
+		"  @@@   "
+		"  .@.   "
+		"        "
+		"        "
+		"        ");
+	ASSERT_EQ(board.win_state(), Board::WhiteWins);
+
+	board.from_dots(
+		"        "
+		"        "
+		"  .@.   "
+		"  @ @   "
+		"  .@.   "
+		"        "
+		"        "
+		"        ");
+	ASSERT_EQ(board.win_state(), Board::Draw);
+
+	board.from_dots(
+		"        "
+		"        "
+		"        "
+		"        "
+		"        "
+		"        "
+		"        "
+		"       .");
+	ASSERT_EQ(board.win_state(), Board::BlackWins);
+	
+	board.from_dots(
+		"@       "
+		"        "
+		"        "
+		"        "
+		"        "
+		"        "
+		"        "
+		"        ");
+	ASSERT_EQ(board.win_state(), Board::WhiteWins);
+
+	board.from_dots(
+		"@       "
+		"        "
+		"        "
+		"        "
+		"        "
+		"        "
+		"        "
+		"       .");
+	ASSERT_EQ(board.win_state(), Board::Draw);
+}
+

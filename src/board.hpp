@@ -12,6 +12,12 @@ constexpr uint64_t MASK_ALL = ~0ULL;
 
 class Board {
 public:
+	enum WinState {
+	   BlackWins,
+	   WhiteWins,
+	   Draw
+	};
+
 	Board();
 
 	/**
@@ -26,6 +32,7 @@ public:
 	 * @param color - the color of the piece to be placed
 	 */
 	void move(uint8_t x, uint8_t y, bool color);
+	void move(uint8_t index, bool color);
 
 	/**
 	 * @brief place a piece on the board if the move is valid.
@@ -38,26 +45,21 @@ public:
 	 */
 	void from_dots(std::string dots);
 
-	enum GameState {
-		Playing,
-		BlackWins,
-		WhiteWins,
-		Draw
-	};
 	/**
 	 * @brief what state is the game in
-	 * @returns GameState representing the current status of the game
+	 * @returns WinState representing the current status of the game
 	 */
-	GameState state() const;
+	WinState win_state() const;
 
-	bool operator==(Board& other) { return this->occupied == other.occupied && this->color == other.color; }
-	bool operator!=(Board& other) { return !operator==(other); }
+	bool operator==(Board& other) {
+		return this->occupied == other.occupied && this->color == other.color;
+	}
+	bool operator!=(Board& other) {
+		return !operator==(other);
+	}
 
 	uint64_t occupied;
 	uint64_t color;
-
-private:
-	int number_of_set_bits(uint32_t i);
 };
 
 std::ostream& operator<<(std::ostream& os, const Board& board);
