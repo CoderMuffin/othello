@@ -50,9 +50,8 @@ unsigned int max_index(Vector& v, uint64_t valid) {
 }
 
 std::mt19937 generation_random{std::random_device()()};
-
-void NNBatch::mutate(NN& nn) {
-    for (int i = 0; i < 5; i++) {
+void NNBatch::mutate(NN& nn, int mutations) {
+    for (int i = 0; i < mutations; i++) {
         auto mutation = (generation_random() % 2);
         if (mutation == 0) {
             nn.mutate_change_weight();
@@ -65,7 +64,7 @@ void NNBatch::mutate(NN& nn) {
     }
 }
 
-void NNBatch::play_generation() {
+void NNBatch::play_generation(int mutations) {
     for (auto& board : boards) {
         board.reset();
     }
@@ -97,7 +96,7 @@ void NNBatch::play_generation() {
     new_nns.reserve(nns.size());
     for (int i = 0; i < std::min(mutate_count, winning_indeces.size()); i++) {
         NN nn(nns[winning_indeces[i]]);
-        mutate(nn);
+        mutate(nn, mutations);
         new_nns.push_back(std::move(nn));
     }
     for (int i = std::min(copy_count, winning_indeces.size()); i >= 0; i--) {

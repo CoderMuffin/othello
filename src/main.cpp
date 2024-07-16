@@ -27,9 +27,10 @@ int main() {
 
     NNBatch batch{100, 50, 25};
 
-    for (int i = 0; i < 1000; i++) {
-        if (i%100 == 0)std::cout << "generation " << i << std::endl;
-        batch.play_generation();
+    constexpr int n = 1000;
+    for (int i = 0; i < n; i++) {
+        if (i%(n/10) == 0)std::cout << "generation " << i << std::endl;
+        batch.play_generation((n-1 - i)/(n/10) + 1);
     }
 
     NN nn_black = batch.nns[0];

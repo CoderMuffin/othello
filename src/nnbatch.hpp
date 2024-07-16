@@ -21,8 +21,8 @@ public:
 	 * @brief plays the two neural networks against each other, returning the winner
 	 * @returns the winning color (BLACK or WHITE)
 	 */
-	void mutate(NN& nn);
-	void play_generation();
+	void mutate(NN& nn, int mutations);
+	void play_generation(int mutations);
 	static Board::WinState play_game(Board &board, NN &black, NN &white);
 	std::vector<NN> nns;
 private:
