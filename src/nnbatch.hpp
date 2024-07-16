@@ -10,7 +10,7 @@ public:
 		boards.reserve(nn_count / 2);
 
 		for (int i = 0; i < nn_count; i++) {
-			nns.push_back(NN({ 64, 256, 256, 64 }, 1.0f));
+			nns.push_back(NN({ 16, 64, 64, 16 }, 1.0f));
 		}
 		for (int i = 0; i < nn_count/2; i++) {
 			boards.push_back(Board());

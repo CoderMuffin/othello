@@ -17,10 +17,18 @@
     // return scores;
 // }
 
+int map8x8(int miniboard) {
+    return miniboard + 18 + (std::floor(miniboard/4) * 4);
+}
+
+int map4x4(int board) {
+    return board - 18 - std::floor((board - 18) / 8) * 4;
+}
+
 Vector vectorize(Board& board, bool pos_color) {
-    Vector result(64);
-    for (int i = 0; i < 64; i++) {
-        result[i] = (BIT(board.occupied, i) ?
+    Vector result(16);
+    for (int i = 0; i < 16; i++) {
+        result[i] = (BIT(board.occupied, map8x8(i)) ?
             0 :
             BIT(board.color, i) ^ pos_color ? // if bit is not the same color (0^0=0, 1^1=1)
                 -1 : // set bit when white indicates us
@@ -32,8 +40,8 @@ Vector vectorize(Board& board, bool pos_color) {
 unsigned int max_index(Vector& v, uint64_t valid) {
     unsigned int max_index = 0;
     double max = -INFINITY;
-    for (unsigned int i = 0; i < 64; i++) {
-        if (BIT(valid, i) && v[i] > max) {
+    for (unsigned int i = 0; i < 16; i++) {
+        if (BIT(valid, map8x8(i)) && v[i] > max) {
             max_index = i;
             max = v[i];
         }
@@ -118,7 +126,7 @@ Board::WinState NNBatch::play_game(Board &board, NN &black, NN &white) {
             passed = true;
         } else {
             Vector result = ((to_move == BLACK) ? black : white).apply(vectorize(board, to_move));
-            int play_index = max_index(result, moves);
+            int play_index = map8x8(max_index(result, moves));
             board.move(play_index, to_move);
             passed = false;
         }
