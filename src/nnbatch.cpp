@@ -17,7 +17,7 @@
     // return scores;
 // }
 
-Vector vectorize(Board& board, bool pos_color) {
+Vector NNBatch::vectorize(const Board& board, bool pos_color) {
     Vector result(64);
     for (int i = 0; i < 64; i++) {
         result[i] = (BIT(board.occupied, i) ?
@@ -29,7 +29,7 @@ Vector vectorize(Board& board, bool pos_color) {
     return result;
 }
 
-unsigned int max_index(Vector& v, uint64_t valid) {
+unsigned int NNBatch::max_index(const Vector& v, uint64_t valid) {
     unsigned int max_index = 0;
     double max = -INFINITY;
     for (unsigned int i = 0; i < 64; i++) {

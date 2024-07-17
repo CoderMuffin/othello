@@ -25,7 +25,9 @@ public:
         swap(a.weights, b.weights);
         swap(a.biases, b.biases);
     }
-
+    
+    friend std::ostream& operator<<(std::ostream& file, const NN& nn);
+    friend std::istream& operator>>(std::istream& file, NN& nn);
 private:
     void initialize_layers_random(const std::initializer_list<int>);
     std::vector<Matrix> weights;
