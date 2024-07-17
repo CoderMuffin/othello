@@ -23,6 +23,9 @@ public:
 	 */
 	void mutate(NN& nn, int mutations);
 	void play_generation(int mutations);
+	static Vector vectorize(const Board& board, bool color);
+	static unsigned int max_index(const Vector& result, uint64_t moves);
+
 	static Board::WinState play_game(Board &board, NN &black, NN &white);
 	std::vector<NN> nns;
 private:

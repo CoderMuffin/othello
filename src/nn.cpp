@@ -1,5 +1,63 @@
 #include "nn.hpp"
+#include <cassert>
 #include <random>
+#include <iostream>
+
+std::ostream& operator<<(std::ostream& file, const NN& nn) {
+    assert(nn.weights.size() == nn.biases.size());
+    
+    uint64_t size = nn.weights.size();
+    file << size << '\n';
+    
+    for (const auto& element : nn.weights) {
+        file << element.rows() << ' ' << element.cols() << '\n';
+        file << element << '\n';
+    }
+    for (const auto& element : nn.biases) {
+        file << element.size() << '\n';
+        file << element << '\n';
+    }
+
+    return file;
+}
+
+std::istream& operator>>(std::istream& file, NN& nn) {
+    nn.weights.clear();
+    nn.biases.clear();
+    
+    uint64_t size;
+    file >> size;
+    
+    nn.weights.reserve(size);
+    nn.biases.reserve(size);
+
+    for (int i = 0; i < size; i++) {
+        Eigen::Index rows, cols;
+        file >> rows >> cols;
+        
+        Matrix m(rows, cols);
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                file >> m(row, col);
+            }
+        }
+
+        nn.weights.push_back(m);
+    }
+
+    for (int i = 0; i < size; i++) {
+        Eigen::Index size;
+        file >> size;
+
+        Vector v(size);
+        for (int j = 0; j < size; j++) {
+            file >> v(j);
+        }
+        nn.biases.push_back(v);
+    }
+
+    return file;
+}
 
 Vector NN::apply(const Vector& in) const {
     Vector out = in;
@@ -45,7 +103,6 @@ void NN::mutate_add_layer() {
     int index = (mutate_rng() % (weights.size() - 1)) + 1; // if 3 layers, can only insert in middle 2 gaps
     // call to copy ctor
     biases.insert(biases.cbegin() + index, biases[index - 1]);
-
     // imagine position 0 (:!: :)
     //                     0 1 2
     // index                0 1

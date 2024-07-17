@@ -25,7 +25,7 @@ int map4x4(int board) {
     return board - 18 - std::floor((board - 18) / 8) * 4;
 }
 
-Vector vectorize(Board& board, bool pos_color) {
+Vector NNBatch::vectorize(Board& board, bool pos_color) {
     Vector result(16);
     for (int i = 0; i < 16; i++) {
         result[i] = (BIT(board.occupied, map8x8(i)) ?
@@ -37,7 +37,7 @@ Vector vectorize(Board& board, bool pos_color) {
     return result;
 }
 
-unsigned int max_index(Vector& v, uint64_t valid) {
+unsigned int NNBatch::max_index(const Vector& v, uint64_t valid) {
     unsigned int max_index = 0;
     double max = -INFINITY;
     for (unsigned int i = 0; i < 16; i++) {
