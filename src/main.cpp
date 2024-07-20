@@ -1,7 +1,9 @@
+#include <ios>
 #include <iostream>
 #include <ostream>
+#include <string>
 #include <vector>
-#include <fstream>
+#include "input.hpp"
 #include "nnbatch.hpp"
 #include "util.hpp"
 #include "nn.hpp"
@@ -52,50 +54,65 @@ Board::WinState play_nn(Board &board, NN &nn, bool nn_color) {
 }
 
 int main() {
-    Board b;
+    Board board;
+    bool to_move;
+    auto arms = CommandArm {
+        CommandArm { "move", {
+            CommandArm { "nn", [&](std::vector<std::string>& args) {
+
+            } },
+            CommandArm { "sq", [&](std::vector<std::string>& args) {
+                int moves = board.valid_moves(to_move);
+                int position;
+                if (args[1].size() != 2) {
+                    std::cout << "invalid square" << std::endl;
+                    return;
+                }
+                position = XY(args[1][0] - 'a', args[1][1] - '1');
+                board.move(position, to_move);
+            } }
+        } }
+    };
+
+    while (true) {
+        std::cout << "> " << std::flush;
+        std::string s;
+        std::getline(std::cin, s);
+        if (!arms.process(s)) {
+            std::cout << "no action taken" << std::endl;
+        }
+    }
 
     bootstrap_win32_unicode();
 
-    std::cout << b << std::endl;
-    b.move(5, 4, WHITE);
-    std::cout << b << std::endl;
-    b.move(6, 4, BLACK);
-    std::cout << b << std::endl;
-    visualise_bitboard(b.valid_moves(WHITE));
-
-    NNBatch batch{100, 50, 25};
-
-    constexpr int n = 1000;
-    for (int i = 0; i < n; i++) {
-        if (i%(n/10) == 0) std::cout << "generation " << i << std::endl;
-        batch.play_generation((n-1 - i)/(n/10) + 1);
-    }
-
-    NN nn_black = batch.nns[0];
-    NN nn_white = batch.nns[1]; // ({64, 64}, 0.01);
-
+    // std::cout << b << std::endl;
+    // b.move(5, 4, WHITE);
+    // std::cout << b << std::endl;
+    // b.move(6, 4, BLACK);
+    // std::cout << b << std::endl;
+    // visualise_bitboard(b.valid_moves(WHITE));
+//
+    // NNBatch batch{100, 50, 25};
+//
+    // constexpr int n = 1000;
+    // for (int i = 0; i < n; i++) {
+        // if (i%(n/10) == 0) std::cout << "generation " << i << std::endl;
+        // batch.play_generation((n - i)/(n/10) + 1);
+    // }
+//
+    // NN nn_black = batch.nns[0];
+//
     // std::ofstream o("./model.mnn");
     // o << nn_black;
     // o.close();
-    // 
-    // std::ofstream o2("./model2.mnn");
-    // o2 << nn_white;
-    // o2.close();
-
-    std::ifstream i("./model.mnn");
-    i >> nn_black;
-    i.close();
-
-    std::ifstream i2("./model2.mnn");
-    i2 >> nn_white;
-    i2.close();
-
-    int wins = 0;
-    for (int i = 0; i < 100; i++) {
-        b.reset();
-        if (NNBatch::play_game(b, nn_black, nn_white) == Board::BlackWins) wins++;
-    }
-    std::cout << wins << std::endl;
+//
+    // int wins = 0;
+    // for (int i = 0; i < 100; i++) {
+        // b.reset();
+        // NN nn_white({16, 16}, 0);
+        // if (NNBatch::play_game(b, nn_black, nn_white) == Board::BlackWins) wins++;
+    // }
+    // std::cout << wins << std::endl;
     // NN nn(&std::vector<int> { 4, 2, 3 }, 0.01);
     // Vector v(4);
     // v << 1, 2, 3, 4;

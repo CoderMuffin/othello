@@ -12,12 +12,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(lib)
-add_library(othello "src/board.cpp" "src/nn.cpp" "src/util.cpp" "src/nnbatch.cpp" )
+add_library(othello "src/board.cpp" "src/nn.cpp" "src/util.cpp" "src/nnbatch.cpp")
 
 target_compile_options(othello PRIVATE -O3)
 
-add_executable(main "src/main.cpp")
-target_compile_options(main PRIVATE -O3)
+add_executable(main "src/main.cpp" "src/input.cpp")
+target_compile_options(main PRIVATE -O3 -g)
 
 add_executable(test "src/test.cpp")
 

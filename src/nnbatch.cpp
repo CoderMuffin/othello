@@ -25,7 +25,7 @@ int map4x4(int board) {
     return board - 18 - std::floor((board - 18) / 8) * 4;
 }
 
-Vector NNBatch::vectorize(Board& board, bool pos_color) {
+Vector NNBatch::vectorize(const Board& board, bool pos_color) {
     Vector result(16);
     for (int i = 0; i < 16; i++) {
         result[i] = (BIT(board.occupied, map8x8(i)) ?
