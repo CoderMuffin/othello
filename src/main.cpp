@@ -2,17 +2,11 @@
 #include <ostream>
 #include <vector>
 #include <fstream>
+#include "input.hpp"
 #include "nnbatch.hpp"
 #include "util.hpp"
 #include "nn.hpp"
 #include "board.hpp"
-
-void visualise_bitboard(uint64_t m) {
-    Board b;
-    b.occupied = m;
-    b.color = 0;
-    std::cout << b << std::endl;
-}
 
 Board::WinState play_nn(Board &board, NN &nn, bool nn_color) {
     bool passed = false;
@@ -56,12 +50,18 @@ int main() {
 
     bootstrap_win32_unicode();
 
-    std::cout << b << std::endl;
-    b.move(5, 4, WHITE);
-    std::cout << b << std::endl;
-    b.move(6, 4, BLACK);
-    std::cout << b << std::endl;
-    visualise_bitboard(b.valid_moves(WHITE));
+    std::string command;
+    auto arms = CommandArm {
+        CommandArm { "zest", {} },
+        CommandArm { "hi", [](std::vector<std::string> args){
+            
+        } }
+    };
+    while (true) {
+        std::cout << "> " << std::flush;
+        std::getline(std::cin, command);
+        arms.process(command);
+    }
 
     NNBatch batch{100, 50, 25};
 
