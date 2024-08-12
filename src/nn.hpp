@@ -11,6 +11,7 @@ public:
         initialize_layers_random(layer_shapes);
     }
     NN(const NN& other) = default;
+    NN& operator=(const NN& other) = default;
     NN(NN &&other) = default;
     Vector apply(const Vector&) const;
     std::vector<Eigen::Index> shape() const;
@@ -28,6 +29,7 @@ public:
     
     friend std::ostream& operator<<(std::ostream& file, const NN& nn);
     friend std::istream& operator>>(std::istream& file, NN& nn);
+
 private:
     void initialize_layers_random(const std::initializer_list<int>);
     std::vector<Matrix> weights;

@@ -50,25 +50,78 @@ int main() {
 
     bootstrap_win32_unicode();
 
+    NNBatch batch{ 100, 50, 25 };
+
     std::string command;
-    auto arms = CommandArm {
-        CommandArm { "zest", {} },
-        CommandArm { "hi", [](std::vector<std::string> args){
-            
-        } }
+    auto processor = CommandProcessor {
+        CommandArm("nn", {
+            CommandArm("move", [](std::vector<std::string> args) {
+                return "not implemented";
+            }),
+            CommandArm("eval", [](std::vector<std::string> args) {
+                return "not implemented";
+            }),
+            CommandArm("play", [](std::vector<std::string> args) {
+                return "not implemented";
+            }),
+            CommandArm("load", [&batch](std::vector<std::string> args) {
+                if (args.size() != 3) return std::string("Expected three arguments");
+
+                int nn_start = std::stoi(args[0]);
+                int nn_end = std::stoi(args[1]);
+                auto filename = args[2] + ".mnn";
+
+                std::ifstream stream(filename);
+                if (!stream.is_open()) return std::string("Could not open ") + filename;
+                stream >> batch.nns[nn_start];
+                stream.close();
+
+                for (int nn = nn_start + 1; nn != nn_end; nn += 1) {
+                    batch.nns[nn] = batch.nns[nn_start];
+                }
+
+                return std::string("Loaded neural network to range ") + std::to_string(nn_start) + " to " + std::to_string(nn_end) + " from " + filename;
+            }),
+            CommandArm("save", [&batch](std::vector<std::string> args) {
+                if (args.size() != 2) return std::string("Expected two arguments");
+                
+                int nn = std::stoi(args[0]);
+                auto filename = args[1] + ".mnn";
+
+                std::ofstream stream(filename);
+                if (!stream.is_open()) return std::string("Could not open ") + filename;
+                stream << batch.nns[nn];
+                stream.close();
+
+                return std::string("Saved neural network ") + std::to_string(nn) + " in " + filename;
+            }),
+            CommandArm("train", [&batch](std::vector<std::string> args) {
+                if (args.size() != 1) return "Expected one argument";
+
+                int n = std::stoi(args[0]);
+                for (int i = 0; i < n; i++) {
+                    if (i % (n / 10 + 1) == 0) std::cout << "generation " << i << std::endl;
+                    batch.play_generation((n - 1 - i) / (n / 10 + 1) + 1);
+                }
+                return "";
+            })
+        }),
+        CommandArm("board", {
+
+        }),
+        CommandArm("help", [](std::vector<std::string> args) {
+            return "uhh todo?";
+        }),
+        CommandArm("exit", [](std::vector<std::string> args) {
+            std::exit(0);
+            return "";
+        })
     };
     while (true) {
-        std::cout << "> " << std::flush;
+        std::cout << "\x1b[36m>\x1b[0m " << std::flush;
         std::getline(std::cin, command);
-        arms.process(command);
-    }
-
-    NNBatch batch{100, 50, 25};
-
-    constexpr int n = 10;
-    for (int i = 0; i < n; i++) {
-        if (i%(n/10) == 0) std::cout << "generation " << i << std::endl;
-        batch.play_generation((n-1 - i)/(n/10) + 1);
+        processor.process(command);
+        std::cout << std::endl;
     }
 
     NN nn_black = batch.nns[0];
