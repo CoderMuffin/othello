@@ -45,11 +45,38 @@ Board::WinState play_nn(Board &board, NN &nn, bool nn_color) {
     return board.win_state();
 }
 
-int main() {
+std::string eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int games) {
     Board b;
 
+    int black_wins = 0, white_wins = 0, draws = 0;
+
+    for (int i = 0; i < games; i++) {
+        b.reset();
+        switch (NNBatch::play_game(b, nn_black, nn_white_generator(i))) {
+        case Board::BlackWins:
+            black_wins++;
+            break;
+        case Board::WhiteWins:
+            white_wins++;
+            break;
+        default:
+            draws++;
+            break;
+        }
+    }
+
+    std::ostringstream out;
+    out << "played " << games << " games:\n\t"
+        << black_wins << " black wins\n\t"
+        << white_wins << " white wins\n\t"
+        << draws << " draws";
+    return out.str();
+}
+
+int main() {
     bootstrap_win32_unicode();
 
+    Board board;
     NNBatch batch{ 100, 50, 25 };
 
     std::string command;
@@ -58,8 +85,11 @@ int main() {
             CommandArm("move", [](std::vector<std::string> args) {
                 return "not implemented";
             }),
-            CommandArm("eval", [](std::vector<std::string> args) {
-                return "not implemented";
+            CommandArm("eval", {
+                CommandArm("batch", [&batch](std::vector<std::string> args) {
+                    return eval_nn(batch.nns[std::stoi(args[0])], [&batch](int game) {
+                    }, batch.size());
+                })
             }),
             CommandArm("play", [](std::vector<std::string> args) {
                 return "not implemented";
@@ -76,7 +106,7 @@ int main() {
                 stream >> batch.nns[nn_start];
                 stream.close();
 
-                for (int nn = nn_start + 1; nn != nn_end; nn += 1) {
+                for (int nn = nn_start + 1; nn <= nn_end; nn += 1) {
                     batch.nns[nn] = batch.nns[nn_start];
                 }
 
@@ -117,41 +147,12 @@ int main() {
             return "";
         })
     };
+
     while (true) {
         std::cout << "\x1b[36m>\x1b[0m " << std::flush;
         std::getline(std::cin, command);
         processor.process(command);
         std::cout << std::endl;
     }
-
-    NN nn_black = batch.nns[0];
-    NN nn_white = batch.nns[1]; // ({64, 64}, 0.01);
-
-    // std::ofstream o("./model.mnn");
-    // o << nn_black;
-    // o.close();
-    // 
-    // std::ofstream o2("./model2.mnn");
-    // o2 << nn_white;
-    // o2.close();
-
-    std::ifstream i("./model.mnn");
-    i >> nn_black;
-    i.close();
-
-    std::ifstream i2("./model2.mnn");
-    i2 >> nn_white;
-    i2.close();
-
-    int wins = 0;
-    for (int i = 0; i < 100; i++) {
-        b.reset();
-        if (NNBatch::play_game(b, nn_black, nn_white) == Board::BlackWins) wins++;
-    }
-    std::cout << wins << std::endl;
-    // NN nn(&std::vector<int> { 4, 2, 3 }, 0.01);
-    // Vector v(4);
-    // v << 1, 2, 3, 4;
-    // std::cout << nn.apply(v) << std::endl;
 }
 
