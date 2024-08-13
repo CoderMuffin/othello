@@ -76,33 +76,40 @@ std::string eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int 
 int main() {
     bootstrap_win32_unicode();
 
+    bool to_move = BLACK;
     Board board;
     NNBatch batch{ 100, 50, 25 };
 
     std::string command;
     auto processor = CommandProcessor {
         CommandArm("nn", {
-            CommandArm("move", [](std::vector<std::string> args) {
-                return "not implemented";
+            CommandArm("move", [](auto args) {
+                
             }),
             CommandArm("eval", {
-                CommandArm("batch", [&batch](std::vector<std::string> args) {
+                CommandArm("batch", [&batch](auto args) {
                     return eval_nn(batch.nns[std::stoi(args[0])], [&batch](int game) {
-                    }, batch.size());
+                        return batch.nns[game];
+                    }, batch.nns.size());
                 })
             }),
-            CommandArm("play", [](std::vector<std::string> args) {
-                return "not implemented";
+            CommandArm("play", [](auto args) {
             }),
-            CommandArm("load", [&batch](std::vector<std::string> args) {
-                if (args.size() != 3) return std::string("Expected three arguments");
+            CommandArm("load", [&batch](auto args) {
+                if (args.size() != 3) {
+                    std::cout << "Expected three arguments" << std::endl;
+                    return;
+                }
 
                 int nn_start = std::stoi(args[0]);
                 int nn_end = std::stoi(args[1]);
                 auto filename = args[2] + ".mnn";
 
                 std::ifstream stream(filename);
-                if (!stream.is_open()) return std::string("Could not open ") + filename;
+                if (!stream.is_open()) {
+                    std::cout << "Could not open " << filename << std::endl;
+                    return;
+                }
                 stream >> batch.nns[nn_start];
                 stream.close();
 
@@ -110,41 +117,100 @@ int main() {
                     batch.nns[nn] = batch.nns[nn_start];
                 }
 
-                return std::string("Loaded neural network to range ") + std::to_string(nn_start) + " to " + std::to_string(nn_end) + " from " + filename;
+                std::cout << "Loaded neural network to range " << nn_start<< " to " << " from " << filename;
             }),
-            CommandArm("save", [&batch](std::vector<std::string> args) {
-                if (args.size() != 2) return std::string("Expected two arguments");
+            CommandArm("save", [&batch](auto args) {
+                if (args.size() != 2) {
+                    std::cout << "Expected two arguments" << std::endl;
+                    return;
+                }
                 
                 int nn = std::stoi(args[0]);
                 auto filename = args[1] + ".mnn";
 
                 std::ofstream stream(filename);
-                if (!stream.is_open()) return std::string("Could not open ") + filename;
+                if (!stream.is_open()) {
+                    std::cout << "Could not open " << filename << std::endl;
+                    return;
+                }
                 stream << batch.nns[nn];
                 stream.close();
 
-                return std::string("Saved neural network ") + std::to_string(nn) + " in " + filename;
+                std::cout << "Saved neural network " << nn << " in " << filename << std::endl;
             }),
-            CommandArm("train", [&batch](std::vector<std::string> args) {
-                if (args.size() != 1) return "Expected one argument";
+            CommandArm("train", [&batch](auto args) {
+                if (args.size() != 1) {
+                    std::cout << "Expected one argument" << std::endl;
+                    return;
+                }
 
                 int n = std::stoi(args[0]);
                 for (int i = 0; i < n; i++) {
                     if (i % (n / 10 + 1) == 0) std::cout << "generation " << i << std::endl;
                     batch.play_generation((n - 1 - i) / (n / 10 + 1) + 1);
                 }
-                return "";
             })
         }),
         CommandArm("board", {
+            CommandArm("reset", [&board](auto args) {
+                board.reset();
+                std::cout << board << std::endl;
+            }),
+            CommandArm("state", [&board, &to_move](auto args) {
+                std::cout << board << std::endl;
+                auto [black, white] = board.piece_count();
+                if (board.valid_moves(BLACK) == 0 && board.valid_moves(WHITE) == 0) {
+                    std::cout << "The game is over. ";
+                    if (black > white) {
+                        std::cout << "Black has won! ";
+                    } else if (black == white) {
+                        std::cout << "It's a draw! ";
+                    } else {
+                        std::cout << "White has won! ";
+                    }
+                } else {
+                    std::cout << (to_move == BLACK ? "Black" : "White") << " to play " << std::endl;
+                }
+                std::cout << "(" << black << " black, " << white << " white)" << std::endl;
+            }),
+            CommandArm("dots", [&board](auto args) {
+                std::cout << board.to_dots() << std::endl;
+            }),
+            CommandArm("move", {
+                CommandArm("nn", [&board, &to_move](auto args) {
+                    int moves = board.valid_moves(to_move);
+                    if (moves == 0) {
+                        std::cout << "No valid moves! Passing..." << std::endl;
+                        to_move = !to_move;
+                        return;
+                    }
+                }),
+                CommandArm([&board, &to_move](auto args) {
+                    int moves = board.valid_moves(to_move);
+                    if (moves == 0) {
+                        std::cout << "No valid moves! Passing..." << std::endl;
+                        to_move = !to_move;
+                        return;
+                    }
 
+                    int position;
+                    char x, y;
+                    do {
+                        std::cin >> x >> y;
+                        position = XY(x - 'a', y - '1');
+                    } while ((OFFSET(position) & moves) == 0);
+
+                    board.move(position, to_move);
+
+                    std::cout << board << std::endl;
+                })
+            }),
         }),
-        CommandArm("help", [](std::vector<std::string> args) {
-            return "uhh todo?";
+        CommandArm("help", [](auto args) {
+            
         }),
-        CommandArm("exit", [](std::vector<std::string> args) {
+        CommandArm("exit", [](auto args) {
             std::exit(0);
-            return "";
         })
     };
 

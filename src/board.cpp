@@ -131,24 +131,30 @@ void Board::from_dots(std::string dots) {
     }
 }
 
-// https://stackoverflow.com/questions/109023/count-the-number-of-set-bits-in-a-32-bit-integer HE HE HE HA
-int popcount32(uint32_t i) {
-    // see also popcnt
-    i = i - ((i >> 1) & 0x55555555);        // add pairs of bits
-    i = (i & 0x33333333) + ((i >> 2) & 0x33333333);  // quads
-    i = (i + (i >> 4)) & 0x0F0F0F0F;        // groups of 8
-    i *= 0x01010101;                        // horizontal sum of bytes
-    return i >> 24;               // return just that top byte (after truncating to 32-bit even when int is wider than uint32_t)
-}
+std::string Board::to_dots() const {
+    char dots[64 + 8];
 
-int popcount64(uint64_t i) {
-    return popcount32(i & 0xFF'FF'FF'FF) + popcount32((i >> 32) & 0xFF'FF'FF'FF);
+    int dot_i = 0;
+    for (int i = 0; i < 64; i++) {
+        if (!(occupied & OFFSET(i))) {
+            dots[dot_i++] = ' ';
+        } else if (color & OFFSET(i)) {
+            dots[dot_i++] = '@';
+        } else {
+            dots[dot_i++] = '.';
+        }
+        if (i % 8 == 7) { // 7, 15, 23, 31, 39, 47, 55, 63
+            dots[dot_i++] = '\n';
+        }
+    }
+    
+    dots[64 + 7] = '\0';
+
+    return dots;
 }
 
 Board::WinState Board::win_state() const {
-    int white = popcount64(occupied & color);
-    int black = popcount64(occupied & ~color);
-
+    auto [black, white] = piece_count();
     if (white == black) {
         return Draw;
     } else if (white > black) {

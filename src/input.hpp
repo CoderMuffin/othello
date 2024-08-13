@@ -8,7 +8,7 @@
 
 class CommandArm {
     friend class CommandProcessor;
-    typedef std::function<std::string(std::vector<std::string>)> Callback;
+    typedef std::function<void(std::vector<std::string>)> Callback;
 
 public:
     CommandArm(const std::string& p_condition, Callback p_callback)

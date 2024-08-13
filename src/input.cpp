@@ -53,12 +53,7 @@ bool CommandArm::process_inner(std::vector<std::string> command, int index) cons
         return false;
     } else {
         command.erase(command.begin(), command.begin() + index);
-        //try {
-            auto result = std::get<Callback>(callback_arms)(command);
-            if (!result.empty()) std::cout << result << std::endl;
-        //} catch (std::exception ex) {
-        //    std::cerr << "An exception occurred!\n\t" << ex.what() << std::endl;
-        //}
+        std::get<Callback>(callback_arms)(command);
         return true;
     }
 }
