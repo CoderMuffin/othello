@@ -42,6 +42,13 @@ bool validate_square(std::string square) {
     return true;
 }
 
+void debug_dump_bitboard(uint64_t bitboard) {
+    Board aux;
+    aux.color = 0;
+    aux.occupied = bitboard;
+    std::cout << aux << std::endl;
+}
+
 struct HistoryState {
     Board board;
     bool to_move;
@@ -58,8 +65,10 @@ int main() {
 
     std::string command;
     auto processor = CommandProcessor {
-        CommandArm("debug", [](auto args) {
+        CommandArm("debug", [&boards](auto args) {
+            bool color = BLACK;
             Board b;
+            std::cout << b << std::endl;
             b.from_dots(
                 "   @@@@ "
                 ". @ .   "
@@ -69,10 +78,8 @@ int main() {
                 "@.. ..  "
                 " ..   . "
                 "       .");
-            Board aux;
-            aux.color = 0;
-            aux.occupied = b.valid_moves(BLACK);
-            std::cout << aux << std::endl;
+            boards.push_back(HistoryState(b, color));
+            debug_dump_bitboard(b.valid_moves(color));
         }),
         CommandArm("nn", {
             CommandArm("eval", {
@@ -86,8 +93,6 @@ int main() {
                         return batch.nns[game];
                     }, batch.nns.size());
                 })
-            }),
-            CommandArm("play", [](auto args) {
             }),
             CommandArm("load", [&batch](auto args) {
                 if (args.size() != 3) {
@@ -226,7 +231,7 @@ int main() {
 
                     Board new_board(state.board);
                     auto position = (unsigned int)XY(args[0][0] - 'a', args[0][1] - '1');
-                    if (((moves & OFFSET(position)) != 0) || (args.size() == 2 && args[1] == "force")) {
+                    if (BIT(moves, position) || (args.size() == 2 && args[1] == "force")) {
                         new_board.move(position, state.to_move);
                         boards.push_back(HistoryState(new_board, !state.to_move));
                         std::cout << new_board << std::endl;
