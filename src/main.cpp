@@ -42,15 +42,38 @@ bool validate_square(std::string square) {
     return true;
 }
 
+struct HistoryState {
+    Board board;
+    bool to_move;
+    HistoryState(Board p_board, bool p_to_move) : board(p_board), to_move(p_to_move) {}
+};
+
 int main() {
     bootstrap_win32_unicode();
 
-    bool to_move = BLACK;
-    Board board;
+    std::vector<HistoryState> boards{
+        HistoryState(Board(), BLACK)
+    };
     NNBatch batch{ 100, 50, 25 };
 
     std::string command;
     auto processor = CommandProcessor {
+        CommandArm("debug", [](auto args) {
+            Board b;
+            b.from_dots(
+                "   @@@@ "
+                ". @ .   "
+                "@. ...@@"
+                ".@.@.@@@"
+                " .@..  ."
+                "@.. ..  "
+                " ..   . "
+                "       .");
+            Board aux;
+            aux.color = 0;
+            aux.occupied = b.valid_moves(BLACK);
+            std::cout << aux << std::endl;
+        }),
         CommandArm("nn", {
             CommandArm("eval", {
                 CommandArm("batch", [&batch](auto args) {
@@ -123,14 +146,24 @@ int main() {
             })
         }),
         CommandArm("board", {
-            CommandArm("reset", [&board](auto args) {
-                board.reset();
-                std::cout << board << std::endl;
+            CommandArm("reset", [&boards](auto args) {
+                boards.push_back(HistoryState(Board(), BLACK));
+                std::cout << boards.back().board << std::endl;
             }),
-            CommandArm("state", [&board, &to_move](auto args) {
-                std::cout << board << std::endl;
-                auto [black, white] = board.piece_count();
-                if (board.valid_moves(BLACK) == 0 && board.valid_moves(WHITE) == 0) {
+            CommandArm("state", [&boards](auto args) {
+                if (args.size() == 1) {
+                    boards.push_back(boards[std::stoull(args[0])]);
+                } else if (args.size() == 0) {
+                    // fallthrough
+                } else {
+                    std::cout << "Expected one or no arguments" << std::endl;
+                    return;
+                }
+
+                auto& state = boards.back();
+                std::cout << state.board << std::endl;
+                auto [black, white] = state.board.piece_count();
+                if (state.board.valid_moves(BLACK) == 0 && state.board.valid_moves(WHITE) == 0) {
                     std::cout << "The game is over. ";
                     if (black > white) {
                         std::cout << "Black has won! ";
@@ -140,34 +173,42 @@ int main() {
                         std::cout << "White has won! ";
                     }
                 } else {
-                    std::cout << (to_move == BLACK ? "Black" : "White") << " to play ";
+                    std::cout << (state.to_move == BLACK ? "Black" : "White") << " to play ";
                 }
+
                 std::cout << "(" << black << " black, " << white << " white)" << std::endl;
+                std::cout << "History state: " << (boards.size() - 1) << std::endl;
             }),
-            CommandArm("dots", [&board](auto args) {
-                std::cout << board.to_dots() << std::endl;
+            CommandArm("dots", [&boards](auto args) {
+                std::cout << boards.back().board.to_dots() << std::endl;
             }),
             CommandArm("move", {
-                CommandArm("nn", [&batch, &board, &to_move](auto args) {
+                CommandArm("nn", [&batch, &boards](auto args) {
+                    auto& state = boards.back();
                     if (args.size() != 1) {
                         std::cout << "Expected one argument" << std::endl;
                         return;
                     }
 
-                    uint64_t moves = board.valid_moves(to_move);
+                    uint64_t moves = state.board.valid_moves(state.to_move);
                     if (moves == 0) {
                         std::cout << "No valid moves! Passing..." << std::endl;
-                        to_move = !to_move;
+                        boards.push_back(HistoryState(state.board, !state.to_move));
+                        std::cout << "History state: " << (boards.size() - 1) << std::endl;
                         return;
                     }
 
+                    Board new_board(state.board);
                     NN& nn = batch.nns[std::stoull(args[0])];
-                    NNBatch::move(board, nn, to_move, moves);
+                    NNBatch::move(new_board, nn, state.to_move, moves);
 
-                    to_move = !to_move;
-                    std::cout << board << std::endl;
+                    boards.push_back(HistoryState(new_board, !state.to_move));
+                    std::cout << new_board << std::endl;
+                    std::cout << "History state: " << (boards.size() - 1) << std::endl;
                 }),
-                CommandArm([&board, &to_move](auto args) {
+                CommandArm([&boards](auto args) {
+                    auto& state = boards.back();
+
                     if (args.size() != 1 && args.size() != 2) {
                         std::cout << "Expected one or two arguments" << std::endl;
                         return;
@@ -175,18 +216,21 @@ int main() {
 
                     if (!validate_square(args[0])) return;
 
-                    uint64_t moves = board.valid_moves(to_move);
+                    uint64_t moves = state.board.valid_moves(state.to_move);
                     if (moves == 0) {
                         std::cout << "No valid moves! Passing..." << std::endl;
-                        to_move = !to_move;
+                        boards.push_back(HistoryState(state.board, !state.to_move));
+                        std::cout << "History state: " << (boards.size() - 1) << std::endl;
                         return;
                     }
 
+                    Board new_board(state.board);
                     auto position = (unsigned int)XY(args[0][0] - 'a', args[0][1] - '1');
                     if (((moves & OFFSET(position)) != 0) || (args.size() == 2 && args[1] == "force")) {
-                        board.move(position, to_move);
-                        to_move = !to_move;
-                        std::cout << board << std::endl;
+                        new_board.move(position, state.to_move);
+                        boards.push_back(HistoryState(new_board, !state.to_move));
+                        std::cout << new_board << std::endl;
+                        std::cout << "History state: " << (boards.size() - 1) << std::endl;
                     } else {
                         std::cout << "Invalid move" << std::endl;
                     }

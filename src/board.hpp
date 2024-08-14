@@ -20,6 +20,10 @@ public:
 	};
 
 	Board();
+	Board(const Board& other) {
+		this->occupied = other.occupied;
+		this->color = other.color;
+	}
 
 	/**
 	 * @brief reset the board
