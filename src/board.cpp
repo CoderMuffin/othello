@@ -132,10 +132,13 @@ void Board::from_dots(std::string dots) {
 }
 
 std::string Board::to_dots() const {
-    char dots[64 + 8];
+    char dots[64 + 8 + 8*2];
 
     int dot_i = 0;
     for (int i = 0; i < 64; i++) {
+        if (i % 8 == 0) {
+            dots[dot_i++] = '"';
+        }
         if (!(occupied & OFFSET(i))) {
             dots[dot_i++] = ' ';
         } else if (color & OFFSET(i)) {
@@ -144,11 +147,12 @@ std::string Board::to_dots() const {
             dots[dot_i++] = '.';
         }
         if (i % 8 == 7) { // 7, 15, 23, 31, 39, 47, 55, 63
+            dots[dot_i++] = '"';
             dots[dot_i++] = '\n';
         }
     }
     
-    dots[64 + 7] = '\0';
+    dots[dot_i - 1] = '\0';
 
     return dots;
 }

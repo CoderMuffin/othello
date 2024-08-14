@@ -73,6 +73,14 @@ std::string eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int 
     return out.str();
 }
 
+bool validate_square(std::string square) {
+    if (square.size() != 2 || !('a' <= square[0] && square[0] <= 'h' && '1' <= square[1] && square[1] <= '8')) {
+        std::cout << "Bad square" << std::endl;
+        return false;
+    }
+    return true;
+}
+
 int main() {
     bootstrap_win32_unicode();
 
@@ -83,9 +91,6 @@ int main() {
     std::string command;
     auto processor = CommandProcessor {
         CommandArm("nn", {
-            CommandArm("move", [](auto args) {
-                
-            }),
             CommandArm("eval", {
                 CommandArm("batch", [&batch](auto args) {
                     return eval_nn(batch.nns[std::stoi(args[0])], [&batch](int game) {
@@ -117,7 +122,7 @@ int main() {
                     batch.nns[nn] = batch.nns[nn_start];
                 }
 
-                std::cout << "Loaded neural network to range " << nn_start<< " to " << " from " << filename;
+                std::cout << "Loaded neural network to range " << nn_start << " to " << " from " << filename;
             }),
             CommandArm("save", [&batch](auto args) {
                 if (args.size() != 2) {
@@ -169,7 +174,7 @@ int main() {
                         std::cout << "White has won! ";
                     }
                 } else {
-                    std::cout << (to_move == BLACK ? "Black" : "White") << " to play " << std::endl;
+                    std::cout << (to_move == BLACK ? "Black" : "White") << " to play ";
                 }
                 std::cout << "(" << black << " black, " << white << " white)" << std::endl;
             }),
@@ -177,15 +182,30 @@ int main() {
                 std::cout << board.to_dots() << std::endl;
             }),
             CommandArm("move", {
-                CommandArm("nn", [&board, &to_move](auto args) {
+                CommandArm("nn", [&batch, &board, &to_move](auto args) {
                     int moves = board.valid_moves(to_move);
                     if (moves == 0) {
                         std::cout << "No valid moves! Passing..." << std::endl;
                         to_move = !to_move;
                         return;
                     }
+
+                    NN& nn = batch.nns[std::stoi(args[0])];
+
+                    Vector result = nn.apply(NNBatch::vectorize(board, to_move));
+                    int play_index = NNBatch::max_index(result, moves);
+                    board.move(play_index, to_move);
+                    to_move = !to_move;
+                    std::cout << board << std::endl;
                 }),
                 CommandArm([&board, &to_move](auto args) {
+                    if (args.size() != 1 && args.size() != 2) {
+                        std::cout << "Expected one or two arguments" << std::endl;
+                        return;
+                    }
+
+                    if (!validate_square(args[0])) return;
+
                     int moves = board.valid_moves(to_move);
                     if (moves == 0) {
                         std::cout << "No valid moves! Passing..." << std::endl;
@@ -193,16 +213,14 @@ int main() {
                         return;
                     }
 
-                    int position;
-                    char x, y;
-                    do {
-                        std::cin >> x >> y;
-                        position = XY(x - 'a', y - '1');
-                    } while ((OFFSET(position) & moves) == 0);
-
-                    board.move(position, to_move);
-
-                    std::cout << board << std::endl;
+                    int position = XY(args[0][0] - 'a', args[0][1] - '1');
+                    if (((moves & OFFSET(position)) != 0) || (args.size() == 2 && args[1] == "force")) {
+                        board.move(position, to_move);
+                        to_move = !to_move;
+                        std::cout << board << std::endl;
+                    } else {
+                        std::cout << "Invalid move" << std::endl;
+                    }
                 })
             }),
         }),
