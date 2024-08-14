@@ -24,7 +24,7 @@ private:
     CommandArm(std::initializer_list<CommandArm> p_arms)
         : condition(std::nullopt), callback_arms(p_arms) {}
 
-    bool process_inner(std::vector<std::string>, int) const;
+    bool process_inner(std::vector<std::string>, unsigned int) const;
 
     std::optional<std::string> condition;
     std::variant<Callback, std::vector<CommandArm>> callback_arms;

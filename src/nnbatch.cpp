@@ -19,12 +19,12 @@
 
 Vector NNBatch::vectorize(const Board& board, bool pos_color) {
     Vector result(64);
-    for (int i = 0; i < 64; i++) {
+    for (Eigen::Index i = 0; i < 64; i++) {
         result[i] = (BIT(board.occupied, i) ?
-            0 :
+            0.0f :
             BIT(board.color, i) ^ pos_color ? // if bit is not the same color (0^0=0, 1^1=1)
-                -1 : // set bit when white indicates us
-                1); // unset bit when white indicates not us
+                -1.0f : // set bit when white indicates us
+                1.0f); // unset bit when white indicates not us
     }
     return result;
 }
@@ -62,12 +62,12 @@ void NNBatch::play_generation(int mutations) {
     }
     std::shuffle(nns.begin(), nns.end(), generation_random);
 
-    std::vector<int> winning_indeces;
+    std::vector<size_t> winning_indeces;
     winning_indeces.reserve(nns.size() / 2); // max is where no draws occur
-    std::vector<int> losing_drawing_indeces;
+    std::vector<size_t> losing_drawing_indeces;
     winning_indeces.reserve(nns.size() / 2);
 
-    for (int i = 0; i < nns.size() - 1; i += 2) {
+    for (size_t i = 0; i < nns.size() - 1; i += 2) {
         switch (play_game(boards[i/2], nns[i], nns[i+1])) {
             case Board::BlackWins:
                 winning_indeces.push_back(i);
@@ -86,12 +86,13 @@ void NNBatch::play_generation(int mutations) {
    
     std::vector<NN> new_nns;
     new_nns.reserve(nns.size());
-    for (int i = 0; i < std::min(mutate_count, winning_indeces.size()); i++) {
+    for (size_t i = 0; i < std::min(mutate_count, winning_indeces.size()); i++) {
         NN nn(nns[winning_indeces[i]]);
         mutate(nn, mutations);
         new_nns.push_back(std::move(nn));
     }
-    for (int i = std::min(copy_count, winning_indeces.size()); i >= 0; i--) {
+    // HACK: changed i >= 0 to i > 0 to make loop stop on time. maybe change from size_t
+    for (size_t i = std::min(copy_count, winning_indeces.size()); i > 0; i--) {
         new_nns.push_back(nns[winning_indeces[i]]);
     }
 
@@ -101,6 +102,12 @@ void NNBatch::play_generation(int mutations) {
     }
 
     nns = std::move(new_nns);
+}
+
+void NNBatch::move(Board& board, const NN& nn, bool to_move, uint64_t moves) {
+    Vector result = nn.apply(vectorize(board, to_move));
+    unsigned int play_index = max_index(result, moves);
+    board.move(play_index, to_move);
 }
 
 Board::WinState NNBatch::play_game(Board &board, const NN &black, const NN &white) {
@@ -116,9 +123,7 @@ Board::WinState NNBatch::play_game(Board &board, const NN &black, const NN &whit
             }
             passed = true;
         } else {
-            Vector result = ((to_move == BLACK) ? black : white).apply(vectorize(board, to_move));
-            int play_index = max_index(result, moves);
-            board.move(play_index, to_move);
+            move(board, (to_move == BLACK) ? black : white, to_move, moves);
             passed = false;
         }
 

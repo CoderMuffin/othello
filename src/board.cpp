@@ -38,11 +38,11 @@ std::ostream& operator<<(std::ostream& os, const Board& board) {
 const static uint64_t direction_edge[] = { 0x7F7F7F7F7F7F7F7FU, 0x00FFFFFFFFFFFFFFU, 0x007F7F7F7F7F7F7FU, 0x00FEFEFEFEFEFEFEU, 0xFEFEFEFEFEFEFEFEU, 0xFFFFFFFFFFFFFF00U, 0xFEFEFEFEFEFEFE00U, 0x7F7F7F7F7F7F7F00U };
 const static int direction_shift[] = { 1, 8, 9, 7 }; // can't bitshift by negative apparently
 
-void Board::move(uint8_t new_x, uint8_t new_y, bool new_color) {
+void Board::move(unsigned int new_x, unsigned int new_y, bool new_color) {
     move(XY(new_x, new_y), new_color);
 }
 
-void Board::move(uint8_t index, bool new_color) {
+void Board::move(unsigned int index, bool new_color) {
     uint64_t position = OFFSET(index);
     this->occupied |= position;
     if (new_color) {
@@ -121,7 +121,7 @@ uint64_t Board::valid_moves(bool new_color) const {
 void Board::from_dots(std::string dots) {
     occupied = 0;
     color = 0;
-    for (int i = 0; i < 64; i++) {
+    for (unsigned i = 0; i < 64; i++) {
         if (dots[i] == '.') {
             occupied |= OFFSET(i);
         } else if (dots[i] == '@') {
@@ -135,7 +135,7 @@ std::string Board::to_dots() const {
     char dots[64 + 8 + 8*2];
 
     int dot_i = 0;
-    for (int i = 0; i < 64; i++) {
+    for (unsigned i = 0; i < 64; i++) {
         if (i % 8 == 0) {
             dots[dot_i++] = '"';
         }

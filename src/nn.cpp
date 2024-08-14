@@ -31,7 +31,7 @@ std::istream& operator>>(std::istream& file, NN& nn) {
     nn.weights.reserve(size);
     nn.biases.reserve(size);
 
-    for (int i = 0; i < size; i++) {
+    for (uint64_t i = 0; i < size; i++) {
         Eigen::Index rows, cols;
         file >> rows >> cols;
         
@@ -45,12 +45,12 @@ std::istream& operator>>(std::istream& file, NN& nn) {
         nn.weights.push_back(m);
     }
 
-    for (int i = 0; i < size; i++) {
-        Eigen::Index size;
-        file >> size;
+    for (uint64_t i = 0; i < size; i++) {
+        Eigen::Index m_size;
+        file >> m_size;
 
-        Vector v(size);
-        for (int j = 0; j < size; j++) {
+        Vector v(m_size);
+        for (int j = 0; j < m_size; j++) {
             file >> v(j);
         }
         nn.biases.push_back(v);
@@ -61,7 +61,7 @@ std::istream& operator>>(std::istream& file, NN& nn) {
 
 Vector NN::apply(const Vector& in) const {
     Vector out = in;
-    for (int i = 0; i < weights.size(); i++) {
+    for (size_t i = 0; i < weights.size(); i++) {
         out = weights[i] * out + biases[i];
     }
     return out;
@@ -100,9 +100,9 @@ void NN::mutate_change_bias() {
 }
 
 void NN::mutate_add_layer() {
-    int index = (mutate_rng() % (weights.size() - 1)) + 1; // if 3 layers, can only insert in middle 2 gaps
+    size_t index = (mutate_rng() % (weights.size() - 1)) + 1; // if 3 layers, can only insert in middle 2 gaps
     // call to copy ctor
-    biases.insert(biases.cbegin() + index, biases[index - 1]);
+    biases.insert(biases.cbegin() + (ptrdiff_t)index, biases[index - 1]);
     // imagine position 0 (:!: :)
     //                     0 1 2
     // index                0 1
@@ -110,7 +110,7 @@ void NN::mutate_add_layer() {
     // reform index 1, take same inputs (same size) and same outputs as old
     // hence no need to reform!
     auto before = Matrix::Random(weights[index - 1].cols(), weights[index - 1].cols()); // cols deliberate - square matrix produces same output
-    weights.insert(weights.cbegin() + index, before);
+    weights.insert(weights.cbegin() + (ptrdiff_t)index, before);
 }
 
 void NN::mutate_add_node() {
