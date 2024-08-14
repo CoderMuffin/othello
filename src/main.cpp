@@ -3,18 +3,12 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <fstream>
 #include "input.hpp"
 #include "nnbatch.hpp"
 #include "util.hpp"
 #include "nn.hpp"
 #include "board.hpp"
-
-void visualise_bitboard(uint64_t m) {
-    Board b;
-    b.occupied = m;
-    b.color = 0;
-    std::cout << b << std::endl;
-}
 
 Board::WinState play_nn(Board &board, NN &nn, bool nn_color) {
     bool passed = false;
@@ -53,69 +47,198 @@ Board::WinState play_nn(Board &board, NN &nn, bool nn_color) {
     return board.win_state();
 }
 
-int main() {
-    Board board;
-    bool to_move;
-    auto arms = CommandArm {
-        CommandArm { "move", {
-            CommandArm { "nn", [&](std::vector<std::string>& args) {
+std::string eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int games) {
+    Board b;
 
-            } },
-            CommandArm { "sq", [&](std::vector<std::string>& args) {
-                int moves = board.valid_moves(to_move);
-                int position;
-                if (args[1].size() != 2) {
-                    std::cout << "invalid square" << std::endl;
-                    return;
-                }
-                position = XY(args[1][0] - 'a', args[1][1] - '1');
-                board.move(position, to_move);
-            } }
-        } }
-    };
+    int black_wins = 0, white_wins = 0, draws = 0;
 
-    while (true) {
-        std::cout << "> " << std::flush;
-        std::string s;
-        std::getline(std::cin, s);
-        if (!arms.process(s)) {
-            std::cout << "no action taken" << std::endl;
+    for (int i = 0; i < games; i++) {
+        b.reset();
+        switch (NNBatch::play_game(b, nn_black, nn_white_generator(i))) {
+        case Board::BlackWins:
+            black_wins++;
+            break;
+        case Board::WhiteWins:
+            white_wins++;
+            break;
+        default:
+            draws++;
+            break;
         }
     }
 
+    std::ostringstream out;
+    out << "played " << games << " games:\n\t"
+        << black_wins << " black wins\n\t"
+        << white_wins << " white wins\n\t"
+        << draws << " draws";
+    return out.str();
+}
+
+bool validate_square(std::string square) {
+    if (square.size() != 2 || !('a' <= square[0] && square[0] <= 'h' && '1' <= square[1] && square[1] <= '8')) {
+        std::cout << "Bad square" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+int main() {
     bootstrap_win32_unicode();
 
-    // std::cout << b << std::endl;
-    // b.move(5, 4, WHITE);
-    // std::cout << b << std::endl;
-    // b.move(6, 4, BLACK);
-    // std::cout << b << std::endl;
-    // visualise_bitboard(b.valid_moves(WHITE));
-//
-    // NNBatch batch{100, 50, 25};
-//
-    // constexpr int n = 1000;
-    // for (int i = 0; i < n; i++) {
-        // if (i%(n/10) == 0) std::cout << "generation " << i << std::endl;
-        // batch.play_generation((n - i)/(n/10) + 1);
-    // }
-//
-    // NN nn_black = batch.nns[0];
-//
-    // std::ofstream o("./model.mnn");
-    // o << nn_black;
-    // o.close();
-//
-    // int wins = 0;
-    // for (int i = 0; i < 100; i++) {
-        // b.reset();
-        // NN nn_white({16, 16}, 0);
-        // if (NNBatch::play_game(b, nn_black, nn_white) == Board::BlackWins) wins++;
-    // }
-    // std::cout << wins << std::endl;
-    // NN nn(&std::vector<int> { 4, 2, 3 }, 0.01);
-    // Vector v(4);
-    // v << 1, 2, 3, 4;
-    // std::cout << nn.apply(v) << std::endl;
+    bool to_move = BLACK;
+    Board board;
+    NNBatch batch{ 100, 50, 25 };
+
+    std::string command;
+    auto processor = CommandProcessor {
+        CommandArm("nn", {
+            CommandArm("eval", {
+                CommandArm("batch", [&batch](auto args) {
+                    return eval_nn(batch.nns[std::stoi(args[0])], [&batch](int game) {
+                        return batch.nns[game];
+                    }, batch.nns.size());
+                })
+            }),
+            CommandArm("play", [](auto args) {
+            }),
+            CommandArm("load", [&batch](auto args) {
+                if (args.size() != 3) {
+                    std::cout << "Expected three arguments" << std::endl;
+                    return;
+                }
+
+                int nn_start = std::stoi(args[0]);
+                int nn_end = std::stoi(args[1]);
+                auto filename = args[2] + ".mnn";
+
+                std::ifstream stream(filename);
+                if (!stream.is_open()) {
+                    std::cout << "Could not open " << filename << std::endl;
+                    return;
+                }
+                stream >> batch.nns[nn_start];
+                stream.close();
+
+                for (int nn = nn_start + 1; nn <= nn_end; nn += 1) {
+                    batch.nns[nn] = batch.nns[nn_start];
+                }
+
+                std::cout << "Loaded neural network to range " << nn_start << " to " << " from " << filename;
+            }),
+            CommandArm("save", [&batch](auto args) {
+                if (args.size() != 2) {
+                    std::cout << "Expected two arguments" << std::endl;
+                    return;
+                }
+                
+                int nn = std::stoi(args[0]);
+                auto filename = args[1] + ".mnn";
+
+                std::ofstream stream(filename);
+                if (!stream.is_open()) {
+                    std::cout << "Could not open " << filename << std::endl;
+                    return;
+                }
+                stream << batch.nns[nn];
+                stream.close();
+
+                std::cout << "Saved neural network " << nn << " in " << filename << std::endl;
+            }),
+            CommandArm("train", [&batch](auto args) {
+                if (args.size() != 1) {
+                    std::cout << "Expected one argument" << std::endl;
+                    return;
+                }
+
+                int n = std::stoi(args[0]);
+                for (int i = 0; i < n; i++) {
+                    if (i % (n / 10 + 1) == 0) std::cout << "generation " << i << std::endl;
+                    batch.play_generation((n - 1 - i) / (n / 10 + 1) + 1);
+                }
+            })
+        }),
+        CommandArm("board", {
+            CommandArm("reset", [&board](auto args) {
+                board.reset();
+                std::cout << board << std::endl;
+            }),
+            CommandArm("state", [&board, &to_move](auto args) {
+                std::cout << board << std::endl;
+                auto [black, white] = board.piece_count();
+                if (board.valid_moves(BLACK) == 0 && board.valid_moves(WHITE) == 0) {
+                    std::cout << "The game is over. ";
+                    if (black > white) {
+                        std::cout << "Black has won! ";
+                    } else if (black == white) {
+                        std::cout << "It's a draw! ";
+                    } else {
+                        std::cout << "White has won! ";
+                    }
+                } else {
+                    std::cout << (to_move == BLACK ? "Black" : "White") << " to play ";
+                }
+                std::cout << "(" << black << " black, " << white << " white)" << std::endl;
+            }),
+            CommandArm("dots", [&board](auto args) {
+                std::cout << board.to_dots() << std::endl;
+            }),
+            CommandArm("move", {
+                CommandArm("nn", [&batch, &board, &to_move](auto args) {
+                    int moves = board.valid_moves(to_move);
+                    if (moves == 0) {
+                        std::cout << "No valid moves! Passing..." << std::endl;
+                        to_move = !to_move;
+                        return;
+                    }
+
+                    NN& nn = batch.nns[std::stoi(args[0])];
+
+                    Vector result = nn.apply(NNBatch::vectorize(board, to_move));
+                    int play_index = NNBatch::max_index(result, moves);
+                    board.move(play_index, to_move);
+                    to_move = !to_move;
+                    std::cout << board << std::endl;
+                }),
+                CommandArm([&board, &to_move](auto args) {
+                    if (args.size() != 1 && args.size() != 2) {
+                        std::cout << "Expected one or two arguments" << std::endl;
+                        return;
+                    }
+
+                    if (!validate_square(args[0])) return;
+
+                    int moves = board.valid_moves(to_move);
+                    if (moves == 0) {
+                        std::cout << "No valid moves! Passing..." << std::endl;
+                        to_move = !to_move;
+                        return;
+                    }
+
+                    int position = XY(args[0][0] - 'a', args[0][1] - '1');
+                    if (((moves & OFFSET(position)) != 0) || (args.size() == 2 && args[1] == "force")) {
+                        board.move(position, to_move);
+                        to_move = !to_move;
+                        std::cout << board << std::endl;
+                    } else {
+                        std::cout << "Invalid move" << std::endl;
+                    }
+                })
+            }),
+        }),
+        CommandArm("help", [](auto args) {
+            
+        }),
+        CommandArm("exit", [](auto args) {
+            std::exit(0);
+        })
+    };
+
+    while (true) {
+        std::cout << "\x1b[36m>\x1b[0m " << std::flush;
+        std::getline(std::cin, command);
+        processor.process(command);
+        std::cout << std::endl;
+    }
 }
 

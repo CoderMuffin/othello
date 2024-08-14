@@ -1,57 +1,60 @@
-#include <initializer_list>
-#include <iostream>
 #include "input.hpp"
 
-CommandArm::CommandArm(std::initializer_list<CommandArm> p_arms) : arms(p_arms), variant(Root) {}
+#include <iostream>
 
-CommandArm::CommandArm(std::string p_requirement, std::initializer_list<CommandArm> p_arms) : requirement(p_requirement), arms(p_arms), variant(Arms) {}
-
-CommandArm::CommandArm(std::string p_requirement, Handler p_handler) : requirement(p_requirement), handler(p_handler), variant(Case) {}
-
-CommandArm::CommandArm(Handler p_handler) : handler(p_handler), variant(Default) {}
-
-bool CommandArm::process(std::string input) {
+bool CommandProcessor::process(std::string input) const {
+    const std::string delimiter = " ";
+    size_t pos = 0;
+    std::string token;
     std::vector<std::string> command;
-
-    size_t pos;
-    std::string s = input;
-    while ((pos = input.find(' ')) != std::string::npos) {
-        s = input.substr(0, pos);
-        if (s.length() == 0) continue;
-
-        command.push_back(s);
-        input.erase(0, pos + 1); // (' ').length is 1
+    while ((pos = input.find(delimiter)) != std::string::npos) {
+        command.push_back(input.substr(0, pos));
+        input.erase(0, pos + delimiter.length());
     }
     command.push_back(input);
-
-    return process(command, 0);
+    return arm.process_inner(command, 0);
 }
 
-bool CommandArm::process(std::vector<std::string>& command, int index) {
-    if (command.size() <= index) return false;
+bool CommandArm::process_inner(std::vector<std::string> command, int index) const {
+    if (callback_arms.index() == 1) {
+        bool end_of_command = index >= command.size();
 
-    if (variant == Arms || variant == Case) {
-        if (requirement != command[index]) {
+        for (auto& arm : std::get<std::vector<CommandArm>>(callback_arms)) {
+            if (!arm.condition) {
+                return arm.process_inner(command, index);
+            } else if (!end_of_command && *arm.condition == command[index]) {
+                return arm.process_inner(command, index+1);
+            }
+        }
+
+        // no more command left and default branch not called/present
+        if (end_of_command) {
+            std::cerr << "Unexpected end of command" << std::endl;
             return false;
         }
-    }
 
-    switch (variant) {
-        case Arms:
-            index += 1;
-            if (command.size() <= index) return false;
-        case Root:
-            for (auto& arm : arms) {
-                if (arm.process(command, index)) {
-                    return true;
-                }
-            }
-            std::cout << command[index] << " is not a valid command/subcommand (item " << index << ")" << std::endl;
-            return false;
-        case Case:
-        case Default:
-            handler(command);
-            return true;
+        bool whole_command = index == 0;
+
+        if (whole_command) {
+            std::cerr << "Invalid command";
+        } else {
+            std::cerr << "'" << command[index] << "' is not a valid subcommand (in \x1b[94m";
+        }
+
+        for (int i = 0; i < index; i++) {
+            std::cerr << command[i];
+            if (i != index-1) std::cerr << ' ';
+        }
+
+        std::cerr << " \x1b[91m" << command[index] << "\x1b[0m";
+        if (!whole_command) std::cerr << ')';
+        std::cerr << std::endl;
+
+        return false;
+    } else {
+        command.erase(command.begin(), command.begin() + index);
+        std::get<Callback>(callback_arms)(command);
+        return true;
     }
 }
 

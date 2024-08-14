@@ -26,7 +26,7 @@ public:
 	static Vector vectorize(const Board& board, bool color);
 	static unsigned int max_index(const Vector& result, uint64_t moves);
 
-	static Board::WinState play_game(Board &board, NN &black, NN &white);
+	static Board::WinState play_game(Board &board, const NN &black, const NN &white);
 	std::vector<NN> nns;
 private:
 	std::vector<Board> boards;

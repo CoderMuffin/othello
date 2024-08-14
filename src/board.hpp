@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <ostream>
+#include <utility>
 
 constexpr auto BLACK = 0;
 constexpr auto WHITE = 1;
@@ -45,21 +46,44 @@ public:
 	 */
 	void from_dots(std::string dots);
 
+	std::string to_dots() const;
+
 	/**
 	 * @brief what state is the game in
 	 * @returns WinState representing the current status of the game
 	 */
 	WinState win_state() const;
 
-	bool operator==(Board& other) {
+	inline std::pair<int, int> piece_count() const {
+		int white = popcount64(occupied & color);
+		int black = popcount64(occupied & ~color);
+		return std::make_pair(black, white);
+	}
+
+	inline bool operator==(Board& other) {
 		return this->occupied == other.occupied && this->color == other.color;
 	}
-	bool operator!=(Board& other) {
+	inline bool operator!=(Board& other) {
 		return !operator==(other);
 	}
 
 	uint64_t occupied;
 	uint64_t color;
+
+private:
+	// https://stackoverflow.com/questions/109023/count-the-number-of-set-bits-in-a-32-bit-integer HE HE HE HA
+	static int popcount32(int32_t i) {
+		// see also popcnt
+		i = i - ((i >> 1) & 0x55555555);        // add pairs of bits
+		i = (i & 0x33333333) + ((i >> 2) & 0x33333333);  // quads
+		i = (i + (i >> 4)) & 0x0F0F0F0F;        // groups of 8
+		i *= 0x01010101;                        // horizontal sum of bytes
+		return i >> 24;               // return just that top byte (after truncating to 32-bit even when int is wider than uint32_t)
+	}
+
+	static int popcount64(uint64_t i) {
+		return popcount32(i & 0xFF'FF'FF'FF) + popcount32((i >> 32) & 0xFF'FF'FF'FF);
+	}
 };
 
 std::ostream& operator<<(std::ostream& os, const Board& board);

@@ -111,7 +111,7 @@ void NNBatch::play_generation(int mutations) {
     nns = std::move(new_nns);
 }
 
-Board::WinState NNBatch::play_game(Board &board, NN &black, NN &white) {
+Board::WinState NNBatch::play_game(Board &board, const NN &black, const NN &white) {
     bool passed = false;
     bool to_move = BLACK;
     uint64_t moves;

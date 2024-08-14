@@ -1,29 +1,41 @@
 #pragma once
 
-#include <functional>
-#include <initializer_list>
+#include <optional>
 #include <string>
+#include <functional>
+#include <variant>
+#include <iostream>
 
 class CommandArm {
+    friend class CommandProcessor;
+    typedef std::function<void(std::vector<std::string>)> Callback;
+
 public:
-	typedef std::function<void(std::vector<std::string>&)> Handler;
+    CommandArm(const std::string& p_condition, Callback p_callback)
+        : condition(p_condition), callback_arms(p_callback) {}
 
-	CommandArm(std::initializer_list<CommandArm>);
-	CommandArm(std::string, std::initializer_list<CommandArm>);
-	CommandArm(std::string, Handler);
-	CommandArm(Handler);
+    CommandArm(const std::string& p_condition, std::initializer_list<CommandArm> p_arms)
+        : condition(p_condition), callback_arms(p_arms) {}
 
-	bool process(std::string input);
-	bool process(std::vector<std::string>& command, int index);
+    CommandArm(Callback p_callback)
+        : condition(std::nullopt), callback_arms(p_callback) {}
+
 private:
-	enum {
-		Arms,
-		Case,
-		Default,
-		Root
-	} variant;
-	std::string requirement;
-	Handler handler;
-	std::vector<CommandArm> arms;
+    CommandArm(std::initializer_list<CommandArm> p_arms)
+        : condition(std::nullopt), callback_arms(p_arms) {}
+
+    bool process_inner(std::vector<std::string>, int) const;
+
+    std::optional<std::string> condition;
+    std::variant<Callback, std::vector<CommandArm>> callback_arms;
+};
+
+class CommandProcessor {
+public:
+    CommandProcessor(std::initializer_list<CommandArm> p_arms)
+        : arm(p_arms) {}
+    bool process(std::string) const;
+private:
+    CommandArm arm;
 };
 

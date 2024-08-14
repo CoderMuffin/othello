@@ -1,5 +1,5 @@
 #include "board.hpp"
-#include "util.hpp"
+#include "util.hpp" // this is not unused, it is used two lines below :P
 
 #define MUFFINTEST_STARTUP bootstrap_win32_unicode();
 
