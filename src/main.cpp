@@ -47,7 +47,7 @@ Board::WinState play_nn(Board &board, NN &nn, bool nn_color) {
     return board.win_state();
 }
 
-std::string eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int games) {
+void eval_nn(NN nn_black, std::function<NN&(int)> nn_white_generator, int games) {
     Board b;
 
     int black_wins = 0, white_wins = 0, draws = 0;
@@ -67,12 +67,10 @@ std::string eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int 
         }
     }
 
-    std::ostringstream out;
-    out << "played " << games << " games:\n\t"
+    std::cout << "played " << games << " games:\n\t"
         << black_wins << " black wins\n\t"
         << white_wins << " white wins\n\t"
         << draws << " draws";
-    return out.str();
 }
 
 bool validate_square(std::string square) {
@@ -95,7 +93,12 @@ int main() {
         CommandArm("nn", {
             CommandArm("eval", {
                 CommandArm("batch", [&batch](auto args) {
-                    return eval_nn(batch.nns[std::stoi(args[0])], [&batch](int game) {
+                    if (args.size() != 1) {
+                        std::cout << "Expected one argument" << std::endl;
+                        return;
+                    }
+
+                    eval_nn(batch.nns[std::stoi(args[0])], [&batch](int game) {
                         return batch.nns[game];
                     }, batch.nns.size());
                 })
@@ -185,6 +188,11 @@ int main() {
             }),
             CommandArm("move", {
                 CommandArm("nn", [&batch, &board, &to_move](auto args) {
+                    if (args.size() != 1) {
+                        std::cout << "Expected one argument" << std::endl;
+                        return;
+                    }
+
                     int moves = board.valid_moves(to_move);
                     if (moves == 0) {
                         std::cout << "No valid moves! Passing..." << std::endl;
@@ -235,10 +243,18 @@ int main() {
     };
 
     while (true) {
-        std::cout << "\x1b[36m>\x1b[0m " << std::flush;
-        std::getline(std::cin, command);
-        processor.process(command);
-        std::cout << std::endl;
+        try {
+            std::cout << "\x1b[36m>\x1b[0m " << std::flush;
+            std::getline(std::cin, command);
+            processor.process(command);
+            std::cout << std::endl;
+        } catch (std::exception ex) {
+            std::cerr << "Unhandled exception!\n\t" << ex.what() << "\nRethrow (y/n)? ";
+
+            std::string choice;
+            std::getline(std::cin, choice);
+            if (choice[0] == 'y') throw;
+        }
     }
 }
 
