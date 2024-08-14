@@ -3,6 +3,10 @@
 #include "board.hpp"
 #include "nn.hpp"
 
+int map8x8(int miniboard);
+
+int map4x4(int board);
+
 class NNBatch {
 public:
 	NNBatch(unsigned int nn_count, size_t p_mutate_count, size_t p_copy_count) : mutate_count(p_mutate_count), copy_count(p_copy_count) {

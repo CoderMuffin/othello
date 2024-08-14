@@ -195,7 +195,7 @@ int main() {
                     NN& nn = batch.nns[std::stoi(args[0])];
 
                     Vector result = nn.apply(NNBatch::vectorize(board, to_move));
-                    int play_index = NNBatch::max_index(result, moves);
+                    int play_index = map8x8(NNBatch::max_index(result, moves));
                     board.move(play_index, to_move);
                     to_move = !to_move;
                     std::cout << board << std::endl;
