@@ -47,7 +47,7 @@ Board::WinState play_nn(Board &board, NN &nn, bool nn_color) {
     return board.win_state();
 }
 
-void eval_nn(NN nn_black, std::function<NN&(int)> nn_white_generator, int games) {
+void eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int games) {
     Board b;
 
     int black_wins = 0, white_wins = 0, draws = 0;
