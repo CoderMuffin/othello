@@ -15,7 +15,7 @@ bool CommandProcessor::process(std::string input) const {
     return arm.process_inner(command, 0);
 }
 
-bool CommandArm::process_inner(std::vector<std::string> command, int index) const {
+bool CommandArm::process_inner(std::vector<std::string> command, unsigned int index) const {
     if (callback_arms.index() == 1) {
         bool end_of_command = index >= command.size();
 
@@ -41,7 +41,7 @@ bool CommandArm::process_inner(std::vector<std::string> command, int index) cons
             std::cerr << "'" << command[index] << "' is not a valid subcommand (in \x1b[94m";
         }
 
-        for (int i = 0; i < index; i++) {
+        for (size_t i = 0; i < index; i++) {
             std::cerr << command[i];
             if (i != index-1) std::cerr << ' ';
         }

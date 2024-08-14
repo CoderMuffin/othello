@@ -1,13 +1,14 @@
 #pragma once
 
 #include <initializer_list>
+
 #include <Eigen/Dense>
 
 typedef Eigen::MatrixXf Matrix;
 typedef Eigen::VectorXf Vector;
 class NN {
 public:
-    NN(const std::initializer_list<int> layer_shapes, float learning_rate) {
+    NN(const std::initializer_list<int> layer_shapes) {
         initialize_layers_random(layer_shapes);
     }
     NN(const NN& other) = default;

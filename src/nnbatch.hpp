@@ -3,20 +3,20 @@
 #include "board.hpp"
 #include "nn.hpp"
 
-int map8x8(int miniboard);
+unsigned int map8x8(unsigned int miniboard);
 
-int map4x4(int board);
+unsigned int map4x4(unsigned int board);
 
 class NNBatch {
 public:
-	NNBatch(unsigned int nn_count, size_t p_mutate_count, size_t p_copy_count) : mutate_count(p_mutate_count), copy_count(p_copy_count) {
+	NNBatch(size_t nn_count, size_t p_mutate_count, size_t p_copy_count) : mutate_count(p_mutate_count), copy_count(p_copy_count) {
 		nns.reserve(nn_count);
 		boards.reserve(nn_count / 2);
 
-		for (int i = 0; i < nn_count; i++) {
-			nns.push_back(NN({ 16, 64, 64, 16 }, 1.0f));
+		for (size_t i = 0; i < nn_count; i++) {
+			nns.push_back(NN({ 16, 64, 64, 16 }));
 		}
-		for (int i = 0; i < nn_count/2; i++) {
+		for (size_t i = 0; i < nn_count/2; i++) {
 			boards.push_back(Board());
 		}
 	}
@@ -28,13 +28,14 @@ public:
 	void mutate(NN& nn, int mutations);
 	void play_generation(int mutations);
 	static Vector vectorize(const Board& board, bool color);
+	static void move(Board& board, const NN& nn, bool to_move, uint64_t moves);
 	static unsigned int max_index(const Vector& result, uint64_t moves);
 
 	static Board::WinState play_game(Board &board, const NN &black, const NN &white);
 	std::vector<NN> nns;
 private:
 	std::vector<Board> boards;
-	size_t copy_count; // number of winners to reinsert without mutation
 	size_t mutate_count; // number of winners to mutate and reinsert
+	size_t copy_count; // number of winners to reinsert without mutation
 };
 

@@ -1,7 +1,5 @@
-#include <ios>
 #include <iostream>
 #include <ostream>
-#include <string>
 #include <vector>
 #include <fstream>
 #include "input.hpp"
@@ -10,49 +8,12 @@
 #include "nn.hpp"
 #include "board.hpp"
 
-Board::WinState play_nn(Board &board, NN &nn, bool nn_color) {
-    bool passed = false;
-    bool to_move = BLACK;
-    uint64_t moves;
-
-    for (int i = 0; i < 64; i++) {
-        moves = board.valid_moves(to_move);
-        if (moves == 0) {
-            if (passed) { // double pass indicates no moves left!
-                break;
-            }
-            passed = true;
-        } else {
-            if (to_move == nn_color) {
-                Vector result = nn.apply(NNBatch::vectorize(board, to_move));
-                int play_index = NNBatch::max_index(result, moves);
-                board.move(play_index, to_move);
-            } else {
-                int position;
-                char x, y;
-                do {
-                    std::cin >> x >> y;
-                    position = XY(x - 'a', y - '1');
-                } while ((OFFSET(position) & moves) == 0);
-                board.move(position, to_move);
-            }
-            passed = false;
-        }
-
-        // std::cout << "move " << i << "\n" << board << std::endl;
-
-        to_move = !to_move;
-    }
-
-    return board.win_state();
-}
-
-void eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int games) {
+void eval_nn(NN nn_black, std::function<NN(size_t)> nn_white_generator, size_t games) {
     Board b;
 
-    int black_wins = 0, white_wins = 0, draws = 0;
+    size_t black_wins = 0, white_wins = 0, draws = 0;
 
-    for (int i = 0; i < games; i++) {
+    for (size_t i = 0; i < games; i++) {
         b.reset();
         switch (NNBatch::play_game(b, nn_black, nn_white_generator(i))) {
         case Board::BlackWins:
@@ -61,7 +22,7 @@ void eval_nn(NN nn_black, std::function<NN(int)> nn_white_generator, int games) 
         case Board::WhiteWins:
             white_wins++;
             break;
-        default:
+        case Board::Draw:
             draws++;
             break;
         }
@@ -98,7 +59,7 @@ int main() {
                         return;
                     }
 
-                    eval_nn(batch.nns[std::stoi(args[0])], [&batch](int game) {
+                    eval_nn(batch.nns[std::stoull(args[0])], [&batch](size_t game) {
                         return batch.nns[game];
                     }, batch.nns.size());
                 })
@@ -111,8 +72,8 @@ int main() {
                     return;
                 }
 
-                int nn_start = std::stoi(args[0]);
-                int nn_end = std::stoi(args[1]);
+                size_t nn_start = std::stoull(args[0]);
+                size_t nn_end = std::stoull(args[1]);
                 auto filename = args[2] + ".mnn";
 
                 std::ifstream stream(filename);
@@ -123,7 +84,7 @@ int main() {
                 stream >> batch.nns[nn_start];
                 stream.close();
 
-                for (int nn = nn_start + 1; nn <= nn_end; nn += 1) {
+                for (size_t nn = nn_start + 1; nn <= nn_end; nn += 1) {
                     batch.nns[nn] = batch.nns[nn_start];
                 }
 
@@ -135,7 +96,7 @@ int main() {
                     return;
                 }
                 
-                int nn = std::stoi(args[0]);
+                size_t nn = std::stoull(args[0]);
                 auto filename = args[1] + ".mnn";
 
                 std::ofstream stream(filename);
@@ -193,18 +154,16 @@ int main() {
                         return;
                     }
 
-                    int moves = board.valid_moves(to_move);
+                    uint64_t moves = board.valid_moves(to_move);
                     if (moves == 0) {
                         std::cout << "No valid moves! Passing..." << std::endl;
                         to_move = !to_move;
                         return;
                     }
 
-                    NN& nn = batch.nns[std::stoi(args[0])];
+                    NN& nn = batch.nns[std::stoull(args[0])];
+                    NNBatch::move(board, nn, to_move, moves);
 
-                    Vector result = nn.apply(NNBatch::vectorize(board, to_move));
-                    int play_index = map8x8(NNBatch::max_index(result, moves));
-                    board.move(play_index, to_move);
                     to_move = !to_move;
                     std::cout << board << std::endl;
                 }),
@@ -216,14 +175,14 @@ int main() {
 
                     if (!validate_square(args[0])) return;
 
-                    int moves = board.valid_moves(to_move);
+                    uint64_t moves = board.valid_moves(to_move);
                     if (moves == 0) {
                         std::cout << "No valid moves! Passing..." << std::endl;
                         to_move = !to_move;
                         return;
                     }
 
-                    int position = XY(args[0][0] - 'a', args[0][1] - '1');
+                    auto position = (unsigned int)XY(args[0][0] - 'a', args[0][1] - '1');
                     if (((moves & OFFSET(position)) != 0) || (args.size() == 2 && args[1] == "force")) {
                         board.move(position, to_move);
                         to_move = !to_move;
