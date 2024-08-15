@@ -21,7 +21,7 @@ public:
 		}
 	}
 
-	static inline NN NNBatch::make_nn() {
+	static inline NN make_nn() {
 		return NN({ 16, 64, 64, 16 });
 	}
 
