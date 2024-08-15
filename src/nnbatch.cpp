@@ -104,6 +104,10 @@ void NNBatch::play_generation(int mutations) {
         new_nns.push_back(nns[winning_indeces[i]]);
     }
 
+    for (size_t i = 0; i < dummy_count; i++) {
+        new_nns.push_back(make_nn());
+    }
+
     std::uniform_int_distribution<size_t> dist(0, losing_drawing_indeces.size()-1);
     while (new_nns.size() < nns.size()) {
         new_nns.push_back(nns[losing_drawing_indeces[dist(generation_random)]]);
