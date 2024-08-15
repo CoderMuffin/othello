@@ -94,14 +94,14 @@ int main() {
                     }, batch.nns.size());
                 }),
                 CommandArm("random", [&batch](auto args) {
-                    if (args.size() != 1) {
-                        std::cout << "Expected one argument" << std::endl;
+                    if (args.size() != 2) {
+                        std::cout << "Expected two arguments" << std::endl;
                         return;
                     }
 
                     eval_nn(batch.nns[std::stoull(args[0])], [&batch](size_t game) {
                         return NNBatch::make_nn();
-                    }, batch.nns.size());
+                    }, std::stoull(args[1]));
                 })
             }),
             CommandArm("load", [&batch](auto args) {
