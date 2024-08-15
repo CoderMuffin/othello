@@ -61,23 +61,23 @@ int main() {
     std::vector<HistoryState> boards{
         HistoryState(Board(), BLACK)
     };
-    NNBatch batch{ 100, 50, 25 };
+    NNBatch batch{ 100, 30, 20, 20 };
 
     std::string command;
     auto processor = CommandProcessor {
         CommandArm("debug", [&boards](auto args) {
             bool color = BLACK;
             Board b;
-            std::cout << b << std::endl;
             b.from_dots(
-                "   @@@@ "
-                ". @ .   "
-                "@. ...@@"
-                ".@.@.@@@"
-                " .@..  ."
-                "@.. ..  "
-                " ..   . "
-                "       .");
+                "        "
+                "        "
+                "  @@@   "
+                "  @@.   "
+                "  @...  "
+                "    .@  "
+                "        "
+                "        ");
+            std::cout << b << std::endl;
             boards.push_back(HistoryState(b, color));
             debug_dump_bitboard(b.valid_moves(color));
         }),
@@ -91,6 +91,16 @@ int main() {
 
                     eval_nn(batch.nns[std::stoull(args[0])], [&batch](size_t game) {
                         return batch.nns[game];
+                    }, batch.nns.size());
+                }),
+                CommandArm("random", [&batch](auto args) {
+                    if (args.size() != 1) {
+                        std::cout << "Expected one argument" << std::endl;
+                        return;
+                    }
+
+                    eval_nn(batch.nns[std::stoull(args[0])], [&batch](size_t game) {
+                        return NNBatch::make_nn();
                     }, batch.nns.size());
                 })
             }),

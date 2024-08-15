@@ -5,16 +5,20 @@
 
 class NNBatch {
 public:
-	NNBatch(size_t nn_count, size_t p_mutate_count, size_t p_copy_count) : mutate_count(p_mutate_count), copy_count(p_copy_count) {
+	NNBatch(size_t nn_count, size_t p_mutate_count, size_t p_copy_count, size_t p_dummy_count) : mutate_count(p_mutate_count), copy_count(p_copy_count), dummy_count(p_dummy_count) {
 		nns.reserve(nn_count);
 		boards.reserve(nn_count / 2);
 
 		for (size_t i = 0; i < nn_count; i++) {
-			nns.push_back(NN({ 64, 256, 256, 64 }));
+			nns.push_back(make_nn());
 		}
 		for (size_t i = 0; i < nn_count/2; i++) {
 			boards.push_back(Board());
 		}
+	}
+
+	static inline NN NNBatch::make_nn() {
+		return NN({ 64, 256, 256, 64 });
 	}
 
 	/*
@@ -33,5 +37,6 @@ private:
 	std::vector<Board> boards;
 	size_t mutate_count; // number of winners to mutate and reinsert
 	size_t copy_count; // number of winners to reinsert without mutation
+	size_t dummy_count; // number of winners to reinsert without mutation
 };
 
