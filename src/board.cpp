@@ -115,7 +115,7 @@ uint64_t Board::valid_moves(bool new_color) const {
         }
     }
 
-    return moves;
+    return moves & 0x00003C3C3C3C0000ULL;
 }
 
 void Board::from_dots(std::string dots) {
