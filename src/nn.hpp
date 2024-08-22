@@ -31,6 +31,15 @@ public:
     friend std::ostream& operator<<(std::ostream& file, const NN& nn);
     friend std::istream& operator>>(std::istream& file, NN& nn);
 
+    enum class Source {
+        Mutate,
+        WinnerClone,
+        LoserClone,
+        Random
+    };
+
+    Source source;
+
 private:
     void initialize_layers_random(const std::initializer_list<int>);
     std::vector<Matrix> weights;

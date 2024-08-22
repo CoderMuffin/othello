@@ -18,7 +18,9 @@ public:
 	}
 
 	static inline NN make_nn() {
-		return NN({ 64, 256, 256, 64 });
+		NN nn{ 64, 256, 256, 64 };
+		nn.source = NN::Source::Random;
+		return nn;
 	}
 
 	/*
