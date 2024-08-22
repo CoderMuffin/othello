@@ -28,10 +28,25 @@ void eval_nn(NN nn_black, std::function<NN(size_t)> nn_white_generator, size_t g
         }
     }
 
-    std::cout << "played " << games << " games:\n\t"
-        << black_wins << " black wins\n\t"
-        << white_wins << " white wins\n\t"
-        << draws << " draws";
+    std::cout << "evaluating neural network Adam from source ";
+    switch (nn_black.source) {
+    case NN::Source::Random:
+        std::cout << "random";
+        break;
+    case NN::Source::LoserClone:
+        std::cout << "cloned loser";
+        break;
+    case NN::Source::WinnerClone:
+        std::cout << "cloned winner";
+        break;
+    case NN::Source::Mutate:
+        std::cout << "mutated winner";
+        break;
+    }
+    std::cout << "\n" << "played " << games << " games:\n\t"
+        << black_wins << " Adam wins\n\t"
+        << white_wins << " opponent wins\n\t"
+        << draws << " draws" << std::endl;
 }
 
 bool validate_square(std::string square) {
@@ -61,7 +76,7 @@ int main() {
     std::vector<HistoryState> boards{
         HistoryState(Board(), BLACK)
     };
-    NNBatch batch{ 100, 30, 20, 20 };
+    NNBatch batch{ 100, 30, 20, 40 };
 
     std::string command;
     auto processor = CommandProcessor {
@@ -154,9 +169,21 @@ int main() {
                 }
 
                 int n = std::stoi(args[0]);
+                constexpr int max_learn_rate = 10;
                 for (int i = 0; i < n; i++) {
-                    if (i % (n / 10 + 1) == 0) std::cout << "generation " << i << std::endl;
-                    batch.play_generation((n - 1 - i) / (n / 10 + 1) + 1);
+                    if (i % (n / 10) == 0) {
+                        std::cout << "generation " << i << std::endl;
+
+                        for (size_t nn_eval_i = 0; nn_eval_i < batch.nns.size(); nn_eval_i++) {
+                            if (batch.nns[nn_eval_i].source == NN::Source::WinnerClone) {
+                                eval_nn(batch.nns[nn_eval_i], [&batch](size_t game) {
+                                    return NNBatch::make_nn();
+                                }, 1000);
+                                break;
+                            }
+                        }
+                    }
+                    batch.play_generation((max_learn_rate * (n - i)) / n + 1);
                 }
             })
         }),

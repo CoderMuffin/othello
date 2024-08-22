@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <thread>
 #include <random>
 #include "nnbatch.hpp"
 #include "nn.hpp"
@@ -63,7 +64,7 @@ void NNBatch::mutate(NN& nn, int mutations) {
         }
     }
 }
-
+/*
 void NNBatch::play_generation(int mutations) {
     for (auto& board : boards) {
         board.reset();
@@ -76,22 +77,22 @@ void NNBatch::play_generation(int mutations) {
     winning_indeces.reserve(nns.size() / 2);
 
     for (size_t i = 0; i < nns.size() - 1; i += 2) {
-        switch (play_game(boards[i/2], nns[i], nns[i+1])) {
-            case Board::BlackWins:
-                winning_indeces.push_back(i);
-                losing_drawing_indeces.push_back(i+1);
-                break;
-            case Board::WhiteWins:
-                winning_indeces.push_back(i+1);
-                losing_drawing_indeces.push_back(i);
-                break;
-            case Board::Draw:
-                losing_drawing_indeces.push_back(i);
-                losing_drawing_indeces.push_back(i+1);
-                break;
+        switch (play_game(boards[i / 2], nns[i], nns[i + 1])) {
+        case Board::BlackWins:
+            winning_indeces.push_back(i);
+            losing_drawing_indeces.push_back(i + 1);
+            break;
+        case Board::WhiteWins:
+            winning_indeces.push_back(i + 1);
+            losing_drawing_indeces.push_back(i);
+            break;
+        case Board::Draw:
+            losing_drawing_indeces.push_back(i);
+            losing_drawing_indeces.push_back(i + 1);
+            break;
         }
     }
-   
+
     std::vector<NN> new_nns;
     new_nns.reserve(nns.size());
     for (size_t i = 0; i < std::min(mutate_count, winning_indeces.size()); i++) {
@@ -108,9 +109,91 @@ void NNBatch::play_generation(int mutations) {
         new_nns.push_back(make_nn());
     }
 
-    std::uniform_int_distribution<size_t> dist(0, losing_drawing_indeces.size()-1);
+    std::uniform_int_distribution<size_t> dist(0, losing_drawing_indeces.size() - 1);
     while (new_nns.size() < nns.size()) {
         new_nns.push_back(nns[losing_drawing_indeces[dist(generation_random)]]);
+    }
+
+    nns = std::move(new_nns);
+}
+//*/
+
+constexpr size_t THREADS = 16;
+
+void NNBatch::play_generation(int mutations) {
+    std::shuffle(nns.begin(), nns.end(), generation_random);
+
+    auto wins = std::make_unique<int[]>(nns.size());
+    std::thread workers[THREADS];
+
+    for (size_t worker = 0; worker < THREADS; worker++) {
+        workers[worker] = std::thread([this, &wins, worker]() {
+            Board board;
+            for (size_t i = worker; i < nns.size(); i += THREADS) {
+                for (size_t j = 1; j < nns.size(); j++) {
+                    switch (play_game(board, nns[i], nns[(i+j)%nns.size()])) {
+                        case Board::BlackWins:
+                            wins[i]++;
+                            break;
+                        case Board::WhiteWins:
+                            wins[i]--;
+                            break;
+                        case Board::Draw:
+                            break;
+                    }
+                    board.reset();
+                }
+            }
+        });
+    }
+
+    for (auto& worker : workers) {
+        worker.join();
+    }
+   
+    std::vector<NN> new_nns;
+    new_nns.reserve(nns.size());
+
+    const size_t loser_count = nns.size() - dummy_count - copy_count - mutate_count;
+
+    size_t winners_copied = 0;
+    size_t winners_mutated = 0;
+    size_t losers_copied = 0;
+
+    constexpr int initial_requirement = 45;
+    int requirement = initial_requirement;
+
+    while (winners_copied < copy_count || winners_mutated < mutate_count || losers_copied < loser_count) {
+        for (size_t i = 0; i < nns.size(); i++) {
+            if (wins[i] >= requirement) { // better winners get put in more (>=)
+                if (winners_mutated < mutate_count) {
+                    nns[i].source = NN::Source::Mutate;
+                    NN nn(nns[i]);
+                    mutate(nn, mutations);
+                    new_nns.push_back(std::move(nn));
+                    winners_mutated++;
+                }
+                if (winners_copied < copy_count) {
+                    NN nn(nns[i]);
+                    nn.source = NN::Source::WinnerClone;
+                    new_nns.push_back(std::move(nn));
+                    winners_copied++;
+                }
+            }
+            if (wins[i] <= -requirement) {
+                if (losers_copied < loser_count) {
+                    NN nn(nns[i]);
+                    nn.source = NN::Source::LoserClone;
+                    new_nns.push_back(std::move(nn));
+                    losers_copied++;
+                }
+            }
+        }
+        requirement -= 5;
+    }
+
+    for (size_t i = 0; i < dummy_count; i++) {
+        new_nns.push_back(make_nn());
     }
 
     nns = std::move(new_nns);
