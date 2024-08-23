@@ -17,15 +17,25 @@ else()
 endif()
 
 include_directories(lib)
-add_library(othello "src/board.cpp" "src/nn.cpp" "src/util.cpp" "src/nnbatch.cpp" "src/input.cpp")
+add_library(othello "src/board.cpp" "src/nn.cpp" "src/util.cpp" "src/nnbatch.cpp")
+
+set(CompilerFlags )
 
 target_compile_options(othello PRIVATE ${CompilerFlags})
 
-add_executable(main "src/main.cpp")
+
+add_executable(main "src/main.cpp" "src/input.cpp" "src/ui/ui.cpp" "src/ui/boardui.cpp" )
+
+find_package(SDL2 REQUIRED)
+
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "lib/SDL2/cmake/")
+include_directories(${SDL2_INCLUDE_DIRS})
+configure_file("lib/SDL2/lib/x64/SDL2.dll" "SDL2.dll" COPYONLY)
+target_link_libraries(main ${SDL2_LIBRARIES} othello)
+
 target_compile_options(main PRIVATE ${CompilerFlags})
 
-add_executable(test "src/test.cpp")
+add_executable(test "src/test.cpp" "src/ui/boardui.cpp" )
 
-target_link_libraries(main PRIVATE othello)
 target_link_libraries(test PRIVATE othello)
 
