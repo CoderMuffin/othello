@@ -85,20 +85,11 @@ int main() {
     std::string command;
     auto processor = CommandProcessor {
         CommandArm("debug", [&boards](auto args) {
-            bool color = BLACK;
-            Board b;
-            b.from_dots(
-                "        "
-                "        "
-                "  @@@   "
-                "  @@.   "
-                "  @...  "
-                "    .@  "
-                "        "
-                "        ");
-            std::cout << b << std::endl;
-            boards.push_back(HistoryState(b, color));
-            debug_dump_bitboard(b.valid_moves(color));
+            //bool color = boards.back().color;
+            //Board b = boards.back().board;
+
+            //std::cout << b << std::endl;
+            //boards.push_back(HistoryState(b, !color));
         }),
         CommandArm("nn", {
             CommandArm("eval", {
@@ -173,7 +164,7 @@ int main() {
                 }
 
                 int n = std::stoi(args[0]);
-                constexpr int max_learn_rate = 10;
+                constexpr int max_learn_rate = 40;
                 for (int i = 0; i < n; i++) {
                     if (i % (n / 10) == 0) {
                         std::cout << "generation " << i << std::endl;
@@ -187,7 +178,7 @@ int main() {
                             }
                         }
                     }
-                    batch.play_generation((max_learn_rate * (n - i)) / n + 1);
+                    batch.play_generation((max_learn_rate * (n - i)) / n + 1, std::clamp(1.5f - ((float)i) / ((float)n), 0.0f, 1.0f));
                 }
             })
         }),

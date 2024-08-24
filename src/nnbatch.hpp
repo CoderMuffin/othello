@@ -18,7 +18,7 @@ public:
 	}
 
 	static inline NN make_nn() {
-		NN nn{ 64, 256, 256, 64 };
+		NN nn{ 64, 1024, 1024, 64 };
 		nn.source = NN::Source::Random;
 		return nn;
 	}
@@ -27,8 +27,8 @@ public:
 	 * @brief plays the two neural networks against each other, returning the winner
 	 * @returns the winning color (BLACK or WHITE)
 	 */
-	void mutate(NN& nn, int mutations);
-	void play_generation(int mutations);
+	void mutate(NN& nn, int mutations, float temperature);
+	void play_generation(int mutations, float temperature);
 	static Vector vectorize(const Board& board, bool color);
 	static void move(Board& board, const NN& nn, bool to_move, uint64_t moves);
 	static unsigned int max_index(const Vector& result, uint64_t moves);

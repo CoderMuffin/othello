@@ -43,16 +43,13 @@ unsigned int NNBatch::max_index(const Vector& v, uint64_t valid) {
 }
 
 std::mt19937 generation_random{std::random_device()()};
-void NNBatch::mutate(NN& nn, int mutations) {
+void NNBatch::mutate(NN& nn, int mutations, float temperature) {
     for (int i = 0; i < mutations; i++) {
         auto mutation = (generation_random() % 2);
         if (mutation == 0) {
-            nn.mutate_change_weight();
+            nn.mutate_change_weight(temperature);
         } else if (mutation == 1) {
-            nn.mutate_change_bias();
-        } else if (mutation == 2) {
-            // never occurs (x%2 != 2)
-            // nn.mutate_change_weight();
+            nn.mutate_change_bias(temperature);
         }
     }
 }
@@ -112,7 +109,7 @@ void NNBatch::play_generation(int mutations) {
 
 constexpr size_t THREADS = 16;
 
-void NNBatch::play_generation(int mutations) {
+void NNBatch::play_generation(int mutations, float temperature) {
     std::shuffle(nns.begin(), nns.end(), generation_random);
 
     auto wins = std::make_unique<int[]>(nns.size());
@@ -161,7 +158,7 @@ void NNBatch::play_generation(int mutations) {
                 if (winners_mutated < mutate_count) {
                     nns[i].source = NN::Source::Mutate;
                     NN nn(nns[i]);
-                    mutate(nn, mutations);
+                    mutate(nn, mutations, temperature);
                     new_nns.push_back(std::move(nn));
                     winners_mutated++;
                 }

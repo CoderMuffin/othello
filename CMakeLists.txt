@@ -17,14 +17,14 @@ else()
 endif()
 
 include_directories(lib)
-add_library(othello "src/board.cpp" "src/nn.cpp" "src/util.cpp" "src/nnbatch.cpp")
+add_library(othello "src/board.cpp" "src/nn.cpp" "src/util.cpp" "src/nnbatch.cpp" )
 
 set(CompilerFlags )
 
 target_compile_options(othello PRIVATE ${CompilerFlags})
 
 
-add_executable(main "src/main.cpp" "src/input.cpp" "src/ui/ui.cpp" "src/ui/boardui.cpp" )
+add_executable(main "src/main.cpp" "src/input.cpp" "src/ui/ui.cpp" "src/ui/boardui.cpp"  )
 
 find_package(SDL2 REQUIRED)
 
@@ -35,7 +35,7 @@ target_link_libraries(main ${SDL2_LIBRARIES} othello)
 
 target_compile_options(main PRIVATE ${CompilerFlags})
 
-add_executable(test "src/test.cpp" "src/ui/boardui.cpp" )
+add_executable(test "src/test.cpp" "src/ui/boardui.cpp"  )
 
 target_link_libraries(test PRIVATE othello)
 
