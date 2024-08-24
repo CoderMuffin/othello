@@ -14,7 +14,9 @@ public:
 		boards.reserve(nn_count / 2);
 
 		for (size_t i = 0; i < nn_count; i++) {
-			nns.push_back(make_nn());
+			NN nn = make_nn();
+			nn.source = NN::Source::WinnerClone;
+			nns.push_back(nn);
 		}
 		for (size_t i = 0; i < nn_count/2; i++) {
 			boards.push_back(Board());
@@ -22,7 +24,7 @@ public:
 	}
 
 	static inline NN make_nn() {
-		NN nn{ 16, 64, 64, 16 };
+		NN nn{ 16, 256, 256, 16 };
 		nn.source = NN::Source::Random;
 		return nn;
 	}
@@ -31,8 +33,8 @@ public:
 	 * @brief plays the two neural networks against each other, returning the winner
 	 * @returns the winning color (BLACK or WHITE)
 	 */
-	void mutate(NN& nn, int mutations);
-	void play_generation(int mutations);
+	void mutate(NN& nn, int mutations, float temperature);
+	void play_generation(int mutations, float temperature);
 	static Vector vectorize(const Board& board, bool color);
 	static void move(Board& board, const NN& nn, bool to_move, uint64_t moves);
 	static unsigned int max_index(const Vector& result, uint64_t moves);

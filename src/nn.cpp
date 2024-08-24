@@ -89,33 +89,38 @@ void NN::initialize_layers_random(const std::initializer_list<int> shapes) {
 std::mt19937 mutate_rng{std::random_device()()};
 std::uniform_real_distribution<float> mutate_float_dist{-1, 1};
 
-void NN::mutate_change_weight() {
-    auto &weights_layer = weights[mutate_rng() % weights.size()];
-    weights_layer(mutate_rng() % weights_layer.rows(), mutate_rng() % weights_layer.cols()) = mutate_float_dist(mutate_rng);
+void NN::mutate_change_weight(float temperature) {
+    auto& weights_layer = weights[mutate_rng() % weights.size()];
+    auto row = mutate_rng() % weights_layer.rows();
+    auto col = mutate_rng() % weights_layer.cols();
+    weights_layer(row, col) = mutate_float_dist(mutate_rng) * temperature + weights_layer(row, col);
 }
 
-void NN::mutate_change_bias() {
-    auto &biases_layer = biases[mutate_rng() % biases.size()];
-    biases_layer(mutate_rng() % biases_layer.size()) = mutate_float_dist(mutate_rng);
+void NN::mutate_change_bias(float temperature) {
+    auto& biases_layer = biases[mutate_rng() % biases.size()];
+    auto index = mutate_rng() % biases_layer.size();
+    biases_layer(index) = mutate_float_dist(mutate_rng) * temperature + biases_layer(index);
 }
 
-void NN::mutate_add_layer() {
-    size_t index = (mutate_rng() % (weights.size() - 1)) + 1; // if 3 layers, can only insert in middle 2 gaps
+//void NN::mutate_add_layer() {
+    //std::cerr << "nuh uh " << std::endl;
+    //return;
+    //size_t index = (mutate_rng() % (weights.size() - 1)) + 1; // if 3 layers, can only insert in middle 2 gaps
     // call to copy ctor
-    biases.insert(biases.cbegin() + (ptrdiff_t)index, biases[index - 1]);
+    //biases.insert(biases.cbegin() + (ptrdiff_t)index, biases[index - 1]);
     // imagine position 0 (:!: :)
     //                     0 1 2
     // index                0 1
     // insert index 0, take same inputs as old one but new outputs
     // reform index 1, take same inputs (same size) and same outputs as old
     // hence no need to reform!
-    auto before = Matrix::Random(weights[index - 1].cols(), weights[index - 1].cols()); // cols deliberate - square matrix produces same output
-    weights.insert(weights.cbegin() + (ptrdiff_t)index, before);
-}
+//    auto before = Matrix::Random(weights[index - 1].cols(), weights[index - 1].cols()); // cols deliberate - square matrix produces same output
+//    weights.insert(weights.cbegin() + (ptrdiff_t)index, before);
+//}
 
-void NN::mutate_add_node() {
+//void NN::mutate_add_node() {
     // broken!!!
-    return;
+    //return;
 /*
     int index = (mutate_rng() % (weights.size() - 1)) + 1; // if 3 layers, can only insert in middle 2 gaps
     // call to copy ctor
@@ -123,4 +128,4 @@ void NN::mutate_add_node() {
     auto before = Matrix::Random(weights[index - 1].cols(), weights[index - 1].cols()); // cols deliberate - square matrix produces same output
     weights.insert(weights.cbegin() + index, before);
 */
-}
+//}

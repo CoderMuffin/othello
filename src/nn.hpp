@@ -17,10 +17,8 @@ public:
     Vector apply(const Vector&) const;
     std::vector<Eigen::Index> shape() const;
 
-    void mutate_add_layer();
-    void mutate_add_node();
-    void mutate_change_weight();
-    void mutate_change_bias();
+    void mutate_change_weight(float temperature);
+    void mutate_change_bias(float temperature);
 
     friend void swap(NN &a, NN &b) {
         using std::swap;

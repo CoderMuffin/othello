@@ -2,11 +2,13 @@
 #include <ostream>
 #include <vector>
 #include <fstream>
+#include "ui/boardui.hpp"
 #include "input.hpp"
 #include "nnbatch.hpp"
 #include "util.hpp"
 #include "nn.hpp"
 #include "board.hpp"
+#undef main
 
 void eval_nn(NN nn_black, std::function<NN(size_t)> nn_white_generator, size_t games) {
     Board b;
@@ -73,28 +75,21 @@ struct HistoryState {
 int main() {
     bootstrap_win32_unicode();
 
+    BoardUI ui;
+
     std::vector<HistoryState> boards{
         HistoryState(Board(), BLACK)
     };
-    NNBatch batch{ 100, 30, 20, 40 };
+    NNBatch batch{ 100, 40, 30, 20 };
 
     std::string command;
     auto processor = CommandProcessor {
         CommandArm("debug", [&boards](auto args) {
-            bool color = BLACK;
-            Board b;
-            b.from_dots(
-                "        "
-                "        "
-                "  @@@   "
-                "  @@.   "
-                "  @...  "
-                "    .@  "
-                "        "
-                "        ");
-            std::cout << b << std::endl;
-            boards.push_back(HistoryState(b, color));
-            debug_dump_bitboard(b.valid_moves(color));
+            //bool color = boards.back().color;
+            //Board b = boards.back().board;
+
+            //std::cout << b << std::endl;
+            //boards.push_back(HistoryState(b, !color));
         }),
         CommandArm("nn", {
             CommandArm("eval", {
@@ -169,7 +164,8 @@ int main() {
                 }
 
                 int n = std::stoi(args[0]);
-                constexpr int max_learn_rate = 10;
+
+                constexpr int max_learn_rate = 40;
                 for (int i = 0; i < n; i++) {
                     if (i % (n / 10) == 0) {
                         std::cout << "generation " << i << std::endl;
@@ -183,13 +179,14 @@ int main() {
                             }
                         }
                     }
-                    batch.play_generation((max_learn_rate * (n - i)) / n + 1);
+                    batch.play_generation((max_learn_rate * (n - i)) / n + 1, std::clamp(1.5f - ((float)i) / ((float)n), 0.0f, 1.0f));
                 }
             })
         }),
         CommandArm("board", {
-            CommandArm("reset", [&boards](auto args) {
+            CommandArm("reset", [&boards, &ui](auto args) {
                 boards.push_back(HistoryState(Board(), BLACK));
+                ui.set_board(Board());
                 std::cout << boards.back().board << std::endl;
             }),
             CommandArm("state", [&boards](auto args) {
@@ -225,7 +222,7 @@ int main() {
                 std::cout << boards.back().board.to_dots() << std::endl;
             }),
             CommandArm("move", {
-                CommandArm("nn", [&batch, &boards](auto args) {
+                CommandArm("nn", [&batch, &boards, &ui](auto args) {
                     auto& state = boards.back();
                     if (args.size() != 1) {
                         std::cout << "Expected one argument" << std::endl;
@@ -243,12 +240,13 @@ int main() {
                     Board new_board(state.board);
                     NN& nn = batch.nns[std::stoull(args[0])];
                     NNBatch::move(new_board, nn, state.to_move, moves);
+                    ui.set_board(new_board);
 
                     boards.push_back(HistoryState(new_board, !state.to_move));
                     std::cout << new_board << std::endl;
                     std::cout << "History state: " << (boards.size() - 1) << std::endl;
                 }),
-                CommandArm([&boards](auto args) {
+                CommandArm([&boards, &ui](auto args) {
                     auto& state = boards.back();
 
                     if (args.size() != 1 && args.size() != 2) {
@@ -270,6 +268,8 @@ int main() {
                     auto position = (unsigned int)XY(args[0][0] - 'a', args[0][1] - '1');
                     if (BIT(moves, position) || (args.size() == 2 && args[1] == "force")) {
                         new_board.move(position, state.to_move);
+                        ui.set_board(new_board);
+
                         boards.push_back(HistoryState(new_board, !state.to_move));
                         std::cout << new_board << std::endl;
                         std::cout << "History state: " << (boards.size() - 1) << std::endl;
@@ -279,6 +279,15 @@ int main() {
                 })
             }),
         }),
+        CommandArm("ui", {
+            CommandArm("start", [&boards, &ui](auto args) {
+                ui.start();
+                ui.set_board(boards.back().board);
+            }),
+            CommandArm("stop", [&ui](auto args) {
+                ui.stop();
+            })
+        }),
         CommandArm("help", [](auto args) {
             
         }),
@@ -287,11 +296,31 @@ int main() {
         })
     };
 
+    std::mutex mutex;
+
+    ui.on_click.bind([&](int x, int y) {
+        std::string command("board move ");
+        command.push_back('a' + x);
+        command.push_back('1' + y);
+
+        std::cout << "[ui click]" << std::endl;
+
+        mutex.lock();
+        processor.process(command);
+        mutex.unlock();
+
+        std::cout << "\n\x1b[36m>\x1b[0m " << std::flush;
+    });
+
     while (true) {
         try {
             std::cout << "\x1b[36m>\x1b[0m " << std::flush;
             std::getline(std::cin, command);
+
+            mutex.lock();
             processor.process(command);
+            mutex.unlock();
+
             std::cout << std::endl;
         } catch (std::exception ex) {
             std::cerr << "Unhandled exception!\n\t" << ex.what() << "\nRethrow (y/n)? ";
