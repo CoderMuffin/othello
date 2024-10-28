@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ui.hpp"
-#include <functional>
+#include "../board.hpp"
 
 class BoardUI : private UI {
 public:

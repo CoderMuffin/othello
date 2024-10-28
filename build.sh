@@ -1,2 +1,3 @@
-cmake -S . -B build
-cmake --build build
+meson setup build
+cd build
+meson compile

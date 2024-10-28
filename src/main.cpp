@@ -109,7 +109,7 @@ int main() {
                         return;
                     }
 
-                    eval_nn(batch.nns[std::stoull(args[0])], [&batch](size_t game) {
+                    eval_nn(batch.nns[std::stoull(args[0])], [](size_t game) {
                         return NNBatch::make_nn();
                     }, std::stoull(args[1]));
                 })
@@ -171,7 +171,7 @@ int main() {
 
                         for (size_t nn_eval_i = 0; nn_eval_i < batch.nns.size(); nn_eval_i++) {
                             if (batch.nns[nn_eval_i].source == NN::Source::WinnerClone) {
-                                eval_nn(batch.nns[nn_eval_i], [&batch](size_t game) {
+                                eval_nn(batch.nns[nn_eval_i], [](size_t game) {
                                     return NNBatch::make_nn();
                                 }, 1000);
                                 break;
@@ -185,7 +185,8 @@ int main() {
         CommandArm("board", {
             CommandArm("reset", [&boards, &ui](auto args) {
                 boards.push_back(HistoryState(Board(), BLACK));
-                ui.set_board(Board());
+                Board b{};
+                ui.set_board(b);
                 std::cout << boards.back().board << std::endl;
             }),
             CommandArm("state", [&boards](auto args) {
@@ -321,7 +322,7 @@ int main() {
             mutex.unlock();
 
             std::cout << std::endl;
-        } catch (std::exception ex) {
+        } catch (std::exception &ex) {
             std::cerr << "Unhandled exception!\n\t" << ex.what() << "\nRethrow (y/n)? ";
 
             std::string choice;

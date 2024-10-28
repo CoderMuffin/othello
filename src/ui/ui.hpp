@@ -1,10 +1,10 @@
 #pragma once
 
 #include <SDL.h>
-#include "../board.hpp"
 #include "event.hpp"
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 
 class UI {
 public:
