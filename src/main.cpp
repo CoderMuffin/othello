@@ -1,3 +1,4 @@
+#include <cstring>
 #include <iostream>
 #include <ostream>
 #include <vector>
@@ -66,6 +67,34 @@ void debug_dump_bitboard(uint64_t bitboard) {
     std::cout << aux << std::endl;
 }
 
+void show_help(std::string topic) {
+    auto show_command = [](int indent, bool is_category, std::string command, std::string help) {
+        std::cout << std::string((indent+1)*4, ' ')
+                  << (is_category ? "\x1b[33m" : "\x1b[36m") << command
+                  << "\x1b[0m - " << help << "\n";
+    };
+    std::cout << "Othello by CoderMuffin\n"
+              << "Commands:\n";
+    show_command(0, true, "help", "displays this message");
+    show_command(0, true, "nn", "perform neural network related tasks");
+    show_command(1, true, "nn eval", "evaluate a neural network");
+    show_command(2, false, "nn eval random <nn> <games>", "evaluate a neural network over a specified number of games using random opponents"); 
+    show_command(2, false, "nn eval batch <nn>", "evaluate a neural network against the others in its batch");
+    show_command(1, false, "nn save <nn> <filename>", "save a neural network to disk");
+    show_command(1, false, "nn load <from> <to> <filename>", "replace the specified range with the neural network in the file"); 
+    show_command(0, true, "board", "board commands");
+    show_command(1, false, "board reset", "reset the board state");
+    show_command(1, false, "board state [history]", "show the current board state or revert to a past history state");
+    show_command(1, false, "board dots", "give the representation of the board as dots (for debug)");
+    show_command(1, true, "board move", "make a move on the board");
+    show_command(2, false, "board move nn <nn>", "use the neural network specified to make a move");
+    show_command(2, false, "board move <square>", "place a piece at the specified square (e.g. a3)");
+    show_command(0, true, "ui", "ui commands");
+    show_command(1, false, "ui start", "start the board ui. click to place a piece");
+    show_command(1, false, "ui stop", "stop the board ui");
+    show_command(0, false, "exit", "quit");
+}
+
 struct HistoryState {
     Board board;
     bool to_move;
@@ -95,7 +124,7 @@ int main() {
             CommandArm("eval", {
                 CommandArm("batch", [&batch](auto args) {
                     if (args.size() != 1) {
-                        std::cout << "Expected one argument" << std::endl;
+                        std::cout << "Expected one argument (try running help)" << std::endl;
                         return;
                     }
 
@@ -105,7 +134,7 @@ int main() {
                 }),
                 CommandArm("random", [&batch](auto args) {
                     if (args.size() != 2) {
-                        std::cout << "Expected two arguments" << std::endl;
+                        std::cout << "Expected two arguments (try running help)" << std::endl;
                         return;
                     }
 
@@ -116,7 +145,7 @@ int main() {
             }),
             CommandArm("load", [&batch](auto args) {
                 if (args.size() != 3) {
-                    std::cout << "Expected three arguments" << std::endl;
+                    std::cout << "Expected three arguments (try running help)" << std::endl;
                     return;
                 }
 
@@ -140,7 +169,7 @@ int main() {
             }),
             CommandArm("save", [&batch](auto args) {
                 if (args.size() != 2) {
-                    std::cout << "Expected two arguments" << std::endl;
+                    std::cout << "Expected two arguments (try running help)" << std::endl;
                     return;
                 }
                 
@@ -159,7 +188,7 @@ int main() {
             }),
             CommandArm("train", [&batch](auto args) {
                 if (args.size() != 1) {
-                    std::cout << "Expected one argument" << std::endl;
+                    std::cout << "Expected one argument (try running help)" << std::endl;
                     return;
                 }
 
@@ -195,7 +224,7 @@ int main() {
                 } else if (args.size() == 0) {
                     // fallthrough
                 } else {
-                    std::cout << "Expected one or no arguments" << std::endl;
+                    std::cout << "Expected one or no arguments (try running help)" << std::endl;
                     return;
                 }
 
@@ -225,7 +254,7 @@ int main() {
                 CommandArm("nn", [&batch, &boards, &ui](auto args) {
                     auto& state = boards.back();
                     if (args.size() != 1) {
-                        std::cout << "Expected one argument" << std::endl;
+                        std::cout << "Expected one argument (try running help)" << std::endl;
                         return;
                     }
 
@@ -289,7 +318,11 @@ int main() {
             })
         }),
         CommandArm("help", [](auto args) {
-            
+            if (args.size() >= 1) {
+                show_help(args[1]);
+            } else {
+                show_help("help");
+            }
         }),
         CommandArm("exit", [](auto args) {
             std::exit(0);
@@ -311,6 +344,8 @@ int main() {
 
         std::cout << "\n\x1b[36m>\x1b[0m " << std::flush;
     });
+
+    processor.process("help");
 
     while (true) {
         try {

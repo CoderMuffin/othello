@@ -1,11 +1,11 @@
 project('othello', 'cpp', version: '0.1', default_options: ['cpp_std=c++17'])
 
 # Compiler flags based on the platform
-  if host_machine.system() == 'windows'
-      compiler_flags = ['/external:anglebrackets', '/external:W0', '/W4', '/WX', '/Wall', '/wd4514', '/wd4668', '/wd5045', '/wd4820', '/wd4100', '/wd4365']
-  else
-      compiler_flags = ['-O3', '-Wall', '-Wpedantic']
-  endif
+if host_machine.system() == 'windows'
+    compiler_flags = ['/external:anglebrackets', '/external:W0', '/W4', '/WX', '/Wall', '/wd4514', '/wd4668', '/wd5045', '/wd4820', '/wd4100', '/wd4365']
+else
+    compiler_flags = ['-O3', '-Wall', '-Wpedantic']
+endif
 
 # Include directories
 lib_include = include_directories('lib')
