@@ -82,6 +82,7 @@ void show_help(std::string topic) {
     show_command(2, false, "nn eval batch <nn>", "evaluate a neural network against the others in its batch");
     show_command(1, false, "nn save <nn> <filename>", "save a neural network to disk");
     show_command(1, false, "nn load <from> <to> <filename>", "replace the specified range with the neural network in the file"); 
+    show_command(1, false, "nn train <generations>", "train the current batch of neural networks");
     show_command(0, true, "board", "board commands");
     show_command(1, false, "board reset", "reset the board state");
     show_command(1, false, "board state [history]", "show the current board state or revert to a past history state");
